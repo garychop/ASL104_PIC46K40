@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://www.netbeans.org/ns/project/1">
+    <type>com.microchip.mplab.nbide.embedded.makeproject</type>
+    <configuration>
+        <data xmlns="http://www.netbeans.org/ns/make-project/1">
+            <name>ASL104_PIC46K40</name>
+            <name>ASL104E</name>
+            <name>ASL110_PropHeadArray</name>
+            <creation-uuid>3a52219d-b60f-4dd7-9e72-8a5d71ad67b4</creation-uuid>
+            <make-project-type>0</make-project-type>
+            <c-extensions>c</c-extensions>
+            <cpp-extensions/>
+            <header-extensions>h</header-extensions>
+            <asminc-extensions/>
+            <sourceEncoding>ISO-8859-1</sourceEncoding>
+            <make-dep-projects/>
+            <sourceRootList>
+                <sourceRootElem>device</sourceRootElem>
+                <sourceRootElem>common</sourceRootElem>
+                <sourceRootElem>bsp/CCS</sourceRootElem>
+                <sourceRootElem>app</sourceRootElem>
+                <sourceRootElem>bsp/inc</sourceRootElem>
+                <sourceRootElem>stdlib</sourceRootElem>
+                <sourceRootElem>bsp/XC8</sourceRootElem>
+                <sourceRootElem>cocoos/src</sourceRootElem>
+                <sourceRootElem>cocoos/inc</sourceRootElem>
+                <sourceRootElem>drivers</sourceRootElem>
+            </sourceRootList>
+            <confList>
+                <confElem>
+                    <name>Debug</name>
+                    <type>2</type>
+                </confElem>
+                <confElem>
+                    <name>Release</name>
+                    <type>2</type>
+                </confElem>
+            </confList>
+            <formatting>
+                <project-formatting-style>false</project-formatting-style>
+            </formatting>
+        </data>
+    </configuration>
+</project>
