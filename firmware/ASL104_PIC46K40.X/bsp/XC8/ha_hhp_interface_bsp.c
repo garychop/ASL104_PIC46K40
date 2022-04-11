@@ -71,7 +71,7 @@
     #define COMMS_CLK_TOGGLE()				INLINE_EXPR(COMMS_CLK_SET(!COMMS_CLK_IS_ACTIVE()))
     #define COMMS_CLK_CONFIG_RX()			INLINE_EXPR(TRISEbits.TRISE0 = GPIO_BIT_INPUT; ANSELEbits.ANSELE0 = 0)
     #define COMMS_CLK_CONFIG_TX()			INLINE_EXPR(TRISEbits.TRISE0 = GPIO_BIT_OUTPUT; ANSELEbits.ANSELE0 = 0)
-#else
+#else // TODO: Don't know, we are not supporting I2C on any other PIC
     // Master ready to send line
     // X6: Pin 2
     #define COMMS_MASTER_RTS_ACTIVE_VAL     (GPIO_LOW)
@@ -158,10 +158,10 @@ static inline bool WaitForMstRtsPinToGoInactive(uint8_t timeout_cycles);
 //-------------------------------
 void haHhpBsp_Init(void)
 {
-	COMMS_MASTER_RTS_INIT();
-	COMMS_RTS_CTS_INIT();
-	COMMS_DATA_CONFIG_RX();
-	COMMS_CLK_CONFIG_RX();
+//	COMMS_MASTER_RTS_INIT();
+//	COMMS_RTS_CTS_INIT();
+//	COMMS_DATA_CONFIG_RX();
+//	COMMS_CLK_CONFIG_RX();
 	
 #if defined(HA_HHP_COMMS_BSP_TIMING_TEST) || defined(HA_HHP_COMMS_TEST_BASIC_HARDWARE) || defined(HA_HHP_BSP_DELAY_TEST)
 	RunTests();
@@ -176,19 +176,20 @@ void haHhpBsp_Init(void)
 //-------------------------------
 bool haHhpBsp_ReadyToReceivePacket(void)
 {
-	bool ret_val;
-
-	// Clock and data must be high at this point
-	if (WaitForDataPinToGoHigh(1) && WaitForClkPinToGoHigh(1))
-	{
-		ret_val = true;
-	}
-	else
-	{
-		ret_val = false;
-	}
-
-	return ret_val;
+//	bool ret_val;
+//
+//	// Clock and data must be high at this point
+//	if (WaitForDataPinToGoHigh(1) && WaitForClkPinToGoHigh(1))
+//	{
+//		ret_val = true;
+//	}
+//	else
+//	{
+//		ret_val = false;
+//	}
+//
+//	return ret_val;
+    return false; // TODO Replace with real code.
 }
 
 //-------------------------------
@@ -199,23 +200,23 @@ bool haHhpBsp_ReadyToReceivePacket(void)
 //-------------------------------
 void haHhpBsp_TransmitPacket(uint8_t *tx_pkt, uint8_t len)
 {
-	if (WaitForMstRtsPinToGoInactive(HA_HHP_LINE_INPUT_TO_100_us))
-	{
-		StartPacketTransmit();
-
-		// Send all bytes, waiting a small amount of time in between each to allow master device
-		// to process each byte.
-		for (unsigned int i = 0; i < len; i++)
-		{
-			TxByte(tx_pkt[i]);
-		}
-
-		// Set data and clock lines back to inputs.
-		ConfigureIoForNewTransaction();
-		
-		// Let master know that the slave device is giving up control of the communications channel.
-		COMMS_RTS_CTS_SET(false);
-	}
+//	if (WaitForMstRtsPinToGoInactive(HA_HHP_LINE_INPUT_TO_100_us))
+//	{
+//		StartPacketTransmit();
+//
+//		// Send all bytes, waiting a small amount of time in between each to allow master device
+//		// to process each byte.
+//		for (unsigned int i = 0; i < len; i++)
+//		{
+//			TxByte(tx_pkt[i]);
+//		}
+//
+//		// Set data and clock lines back to inputs.
+//		ConfigureIoForNewTransaction();
+//		
+//		// Let master know that the slave device is giving up control of the communications channel.
+//		COMMS_RTS_CTS_SET(false);
+//	}
 }
 
 //-------------------------------
@@ -227,40 +228,40 @@ void haHhpBsp_TransmitPacket(uint8_t *tx_pkt, uint8_t len)
 //-------------------------------
 bool haHhpBsp_RxByte(uint8_t *rxd_byte)
 {
-	unsigned int num_bits_read_in = 0;
+//	unsigned int num_bits_read_in = 0;
 	bool ret_val = true;
 
-	*rxd_byte = 0;
-
-	while ((num_bits_read_in < 8) && ret_val)
-	{
-		// Wait for the clock input to go high.
-		ret_val = WaitForClkPinToGoHigh(HA_HHP_LINE_INPUT_TO_100_us);
-
-		if (ret_val)
-		{
-			// Wait for the clock line to go low.
-			ret_val = WaitForClkPinToGoLow(HA_HHP_LINE_INPUT_TO_100_us);
-			
-            if (ret_val)
-            {
-                // Didn't time out.
-                // Shove bit value into the byte
-                *rxd_byte <<= 1;
-                if (COMMS_DATA_IN_IS_HIGH())
-                {
-                    *rxd_byte |= 0x01;
-                }
-                else
-                {
-                    *rxd_byte &= 0xFE;
-                }
-
-                num_bits_read_in++;
-            }
-		}
-	}
-
+//	*rxd_byte = 0;
+//
+//	while ((num_bits_read_in < 8) && ret_val)
+//	{
+//		// Wait for the clock input to go high.
+//		ret_val = WaitForClkPinToGoHigh(HA_HHP_LINE_INPUT_TO_100_us);
+//
+//		if (ret_val)
+//		{
+//			// Wait for the clock line to go low.
+//			ret_val = WaitForClkPinToGoLow(HA_HHP_LINE_INPUT_TO_100_us);
+//			
+//            if (ret_val)
+//            {
+//                // Didn't time out.
+//                // Shove bit value into the byte
+//                *rxd_byte <<= 1;
+//                if (COMMS_DATA_IN_IS_HIGH())
+//                {
+//                    *rxd_byte |= 0x01;
+//                }
+//                else
+//                {
+//                    *rxd_byte &= 0xFE;
+//                }
+//
+//                num_bits_read_in++;
+//            }
+//		}
+//	}
+//
 	return ret_val;
 }
 
@@ -273,7 +274,8 @@ bool haHhpBsp_RxByte(uint8_t *rxd_byte)
 //-------------------------------
 bool haHhpBsp_MasterRtsAsserted(void)
 {
-	return COMMS_MASTER_RTS_IS_ACTIVE();
+//	return COMMS_MASTER_RTS_IS_ACTIVE();
+    return false; // TODO: Replace 
 }
 
 //-------------------------------
@@ -284,10 +286,10 @@ bool haHhpBsp_MasterRtsAsserted(void)
 //-------------------------------
 void haHhpBsp_SlaveReadyToReceivePacket(void)
 {
-	// Acting as CTS.
-	COMMS_RTS_CTS_SET(true);
-	bspDelayUs(US_DELAY_100_us);
-	COMMS_RTS_CTS_SET(false);
+//	// Acting as CTS.
+//	COMMS_RTS_CTS_SET(true);
+//	bspDelayUs(US_DELAY_100_us);
+//	COMMS_RTS_CTS_SET(false);
 }
 
 /* ********************   Private Function Definitions   ****************** */
@@ -300,18 +302,18 @@ void haHhpBsp_SlaveReadyToReceivePacket(void)
 //-------------------------------
 static void StartPacketTransmit(void)
 {
-	ConfigureIoForResponse();
-
-	// Drive clock and data lines low.
-	COMMS_DATA_SET(true);
-	COMMS_CLK_SET(true);
-
-	// Let master know that the slave device is about to take control of the communications channel.
-	// Acting as RTS.
-	COMMS_RTS_CTS_SET(true);
-
-	// Wait for the master device to configure data and clock lines as inputs.
-	bspDelayUs(US_DELAY_50_us);
+//	ConfigureIoForResponse();
+//
+//	// Drive clock and data lines low.
+//	COMMS_DATA_SET(true);
+//	COMMS_CLK_SET(true);
+//
+//	// Let master know that the slave device is about to take control of the communications channel.
+//	// Acting as RTS.
+//	COMMS_RTS_CTS_SET(true);
+//
+//	// Wait for the master device to configure data and clock lines as inputs.
+//	bspDelayUs(US_DELAY_50_us);
 }
 
 //-------------------------------
@@ -321,8 +323,8 @@ static void StartPacketTransmit(void)
 //-------------------------------
 static void ConfigureIoForResponse(void)
 {
-	COMMS_DATA_CONFIG_TX();
-	COMMS_CLK_CONFIG_TX();
+//	COMMS_DATA_CONFIG_TX();
+//	COMMS_CLK_CONFIG_TX();
 }
 
 //-------------------------------
@@ -332,8 +334,8 @@ static void ConfigureIoForResponse(void)
 //-------------------------------
 static void ConfigureIoForNewTransaction(void)
 {
-	COMMS_DATA_CONFIG_RX();
-	COMMS_CLK_CONFIG_RX();
+//	COMMS_DATA_CONFIG_RX();
+//	COMMS_CLK_CONFIG_RX();
 }
 
 //-------------------------------
@@ -347,16 +349,16 @@ static void ConfigureIoForNewTransaction(void)
 //-------------------------------
 static void TxByte(uint8_t tx_byte)
 {
-	for (unsigned int i = 0; i < 8; i++)
-	{
-		COMMS_DATA_SET((tx_byte & 0x80) > 0);
-		COMMS_CLK_SET(true);
-		bspDelayUs(US_DELAY_50_us);
-		COMMS_CLK_SET(false);
-		bspDelayUs(US_DELAY_50_us - 4);
-		
-		tx_byte <<= 1;
-	}
+//	for (unsigned int i = 0; i < 8; i++)
+//	{
+//		COMMS_DATA_SET((tx_byte & 0x80) > 0);
+//		COMMS_CLK_SET(true);
+//		bspDelayUs(US_DELAY_50_us);
+//		COMMS_CLK_SET(false);
+//		bspDelayUs(US_DELAY_50_us - 4);
+//		
+//		tx_byte <<= 1;
+//	}
 }
 
 //-------------------------------
@@ -371,11 +373,12 @@ static void TxByte(uint8_t tx_byte)
 //-------------------------------
 static inline bool WaitForDataPinToGoHigh(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_DATA_IN_IS_HIGH(); i++)
-	{
-	}
-
-	return COMMS_DATA_IN_IS_HIGH();
+//	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_DATA_IN_IS_HIGH(); i++)
+//	{
+//	}
+//
+//	return COMMS_DATA_IN_IS_HIGH();
+    return false; // TODO: Fix.
 }
 
 //-------------------------------
@@ -390,11 +393,12 @@ static inline bool WaitForDataPinToGoHigh(uint8_t timeout_cycles)
 //-------------------------------
 static inline bool WaitForDataPinToGoLow(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_DATA_IN_IS_HIGH(); i++)
-	{
-	}
-
-	return !COMMS_DATA_IN_IS_HIGH();
+//	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_DATA_IN_IS_HIGH(); i++)
+//	{
+//	}
+//
+//	return !COMMS_DATA_IN_IS_HIGH();
+    return false;   // TODO: Fix
 }
 
 //-------------------------------
@@ -409,11 +413,12 @@ static inline bool WaitForDataPinToGoLow(uint8_t timeout_cycles)
 //-------------------------------
 static inline bool WaitForClkPinToGoHigh(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_CLK_IN_IS_HIGH(); i++)
-	{
-	}
-
-	return COMMS_CLK_IN_IS_HIGH();
+//	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_CLK_IN_IS_HIGH(); i++)
+//	{
+//	}
+//
+//	return COMMS_CLK_IN_IS_HIGH();
+    return false;
 }
 
 //-------------------------------
@@ -428,11 +433,12 @@ static inline bool WaitForClkPinToGoHigh(uint8_t timeout_cycles)
 //-------------------------------
 static inline bool WaitForClkPinToGoLow(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_CLK_IN_IS_HIGH(); i++)
-	{
-	}
-
-	return !COMMS_CLK_IN_IS_HIGH();
+//	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_CLK_IN_IS_HIGH(); i++)
+//	{
+//	}
+//
+//	return !COMMS_CLK_IN_IS_HIGH();
+    return false; // TODO: Fix
 }
 
 //-------------------------------
@@ -447,11 +453,12 @@ static inline bool WaitForClkPinToGoLow(uint8_t timeout_cycles)
 //-------------------------------
 static inline bool WaitForMstRtsPinToGoActive(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_MASTER_RTS_IS_ACTIVE(); i++)
-	{
-	}
-
-	return COMMS_MASTER_RTS_IS_ACTIVE();
+//	for (unsigned int i = 0; (i < timeout_cycles) && !COMMS_MASTER_RTS_IS_ACTIVE(); i++)
+//	{
+//	}
+//
+//	return COMMS_MASTER_RTS_IS_ACTIVE();
+    return false; // TODO: Fix.
 }
 
 //-------------------------------
@@ -466,11 +473,12 @@ static inline bool WaitForMstRtsPinToGoActive(uint8_t timeout_cycles)
 //-------------------------------
 static inline bool WaitForMstRtsPinToGoInactive(uint8_t timeout_cycles)
 {
-	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_MASTER_RTS_IS_ACTIVE(); i++)
-	{
-	}
-
-	return !COMMS_MASTER_RTS_IS_ACTIVE();
+//	for (unsigned int i = 0; (i < timeout_cycles) && COMMS_MASTER_RTS_IS_ACTIVE(); i++)
+//	{
+//	}
+//
+//	return !COMMS_MASTER_RTS_IS_ACTIVE();
+    return false; // TODO: Fix
 }
 
 #if defined(HA_HHP_COMMS_BSP_TIMING_TEST) || defined(HA_HHP_COMMS_TEST_BASIC_HARDWARE) || defined(HA_HHP_BSP_DELAY_TEST)

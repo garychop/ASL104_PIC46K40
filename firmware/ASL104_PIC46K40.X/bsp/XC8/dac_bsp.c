@@ -91,43 +91,43 @@
     //
     // Pin that latches data pushed into the DAC's shift register
     // Pin D4
-    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_IS_ACTIVE()		(LATDbits.LD4 == DAC_LATCH_ACTIVE_STATE)
-    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(active)		INLINE_EXPR(LATDbits.LD4 = active ? DAC_LATCH_ACTIVE_STATE : DAC_LATCH_INACTIVE_STATE)
-    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_TOGGLE()		INLINE_EXPR(DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(DAC_FWD_REV_MOVEMENT_DATA_LATCH_IS_ACTIVE() ? false : true))
-    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_INIT()			INLINE_EXPR(TRISDbits.TRISD4 = GPIO_BIT_OUTPUT)
-
-    // Pin D5
-    #define DAC_FWD_REV_MOVEMENT_DATA_IS_ACTIVE()			(LATDbits.LATD5 == GPIO_HIGH)
-    #define DAC_FWD_REV_MOVEMENT_DATA_SET(active)			INLINE_EXPR(LATDbits.LATD5 = active ? GPIO_HIGH : GPIO_LOW)
-    #define DAC_FWD_REV_MOVEMENT_DATA_TOGGLE()				INLINE_EXPR(DAC_FWD_REV_MOVEMENT_DATA_SET(!DAC_FWD_REV_MOVEMENT_DATA_IS_ACTIVE()))
-    #define DAC_FWD_REV_MOVEMENT_DATA_INIT()				INLINE_EXPR(TRISDbits.TRISD5 = GPIO_BIT_OUTPUT)
-
-    // Pin D6
-    #define DAC_FWD_REV_MOVEMENT_CLK_IS_ACTIVE()			(LATDbits.LATD6 == GPIO_HIGH)
-    #define DAC_FWD_REV_MOVEMENT_CLK_SET(active)			INLINE_EXPR(LATDbits.LATD6 = active ? GPIO_HIGH : GPIO_LOW)
-    #define DAC_FWD_REV_MOVEMENT_CLK_TOGGLE()				INLINE_EXPR(DAC_FWD_REV_MOVEMENT_CLK_SET(!DAC_FWD_REV_MOVEMENT_CLK_IS_ACTIVE()))
-    #define DAC_FWD_REV_MOVEMENT_CLK_INIT()					INLINE_EXPR(TRISDbits.TRISD6 = GPIO_BIT_OUTPUT)
-
+//    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_IS_ACTIVE()		(LATDbits.LD4 == DAC_LATCH_ACTIVE_STATE)
+//    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(active)		INLINE_EXPR(LATDbits.LD4 = active ? DAC_LATCH_ACTIVE_STATE : DAC_LATCH_INACTIVE_STATE)
+//    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_TOGGLE()		INLINE_EXPR(DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(DAC_FWD_REV_MOVEMENT_DATA_LATCH_IS_ACTIVE() ? false : true))
+//    #define DAC_FWD_REV_MOVEMENT_DATA_LATCH_INIT()			INLINE_EXPR(TRISDbits.TRISD4 = GPIO_BIT_OUTPUT)
+//
+//    // Pin D5
+//    #define DAC_FWD_REV_MOVEMENT_DATA_IS_ACTIVE()			(LATDbits.LATD5 == GPIO_HIGH)
+//    #define DAC_FWD_REV_MOVEMENT_DATA_SET(active)			INLINE_EXPR(LATDbits.LATD5 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define DAC_FWD_REV_MOVEMENT_DATA_TOGGLE()				INLINE_EXPR(DAC_FWD_REV_MOVEMENT_DATA_SET(!DAC_FWD_REV_MOVEMENT_DATA_IS_ACTIVE()))
+//    #define DAC_FWD_REV_MOVEMENT_DATA_INIT()				INLINE_EXPR(TRISDbits.TRISD5 = GPIO_BIT_OUTPUT)
+//
+//    // Pin D6
+//    #define DAC_FWD_REV_MOVEMENT_CLK_IS_ACTIVE()			(LATDbits.LATD6 == GPIO_HIGH)
+//    #define DAC_FWD_REV_MOVEMENT_CLK_SET(active)			INLINE_EXPR(LATDbits.LATD6 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define DAC_FWD_REV_MOVEMENT_CLK_TOGGLE()				INLINE_EXPR(DAC_FWD_REV_MOVEMENT_CLK_SET(!DAC_FWD_REV_MOVEMENT_CLK_IS_ACTIVE()))
+//    #define DAC_FWD_REV_MOVEMENT_CLK_INIT()					INLINE_EXPR(TRISDbits.TRISD6 = GPIO_BIT_OUTPUT)
+//
     //-------------------------------
     // left/right movement DAC
     //
     // Pin D7
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_IS_ACTIVE()	(LATDbits.LD7 == DAC_LATCH_ACTIVE_STATE)
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(active)	INLINE_EXPR(LATDbits.LD7 = active ? DAC_LATCH_ACTIVE_STATE : DAC_LATCH_INACTIVE_STATE)
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_TOGGLE()		INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_IS_ACTIVE() ? false : true))
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_INIT()		INLINE_EXPR(TRISDbits.TRISD7 = GPIO_BIT_OUTPUT)
-
-    // Pin D2
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_IS_ACTIVE()		(LATDbits.LATD2 == GPIO_HIGH)
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(active)		INLINE_EXPR(LATDbits.LATD2 = active ? GPIO_HIGH : GPIO_LOW)
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_TOGGLE()			INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(!DAC_LEFT_RIGHT_MOVEMENT_DATA_IS_ACTIVE()))
-    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_INIT()				INLINE_EXPR(TRISDbits.TRISD2 = GPIO_BIT_OUTPUT)
-
-    // Pin D1
-    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_IS_ACTIVE()			(LATDbits.LATD1 == GPIO_HIGH)
-    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(active)			INLINE_EXPR(LATDbits.LATD1 = active ? GPIO_HIGH : GPIO_LOW)
-    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_TOGGLE()			INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(!DAC_LEFT_RIGHT_MOVEMENT_CLK_IS_ACTIVE()))
-    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_INIT()				INLINE_EXPR(TRISDbits.TRISD1 = GPIO_BIT_OUTPUT)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_IS_ACTIVE()	(LATDbits.LD7 == DAC_LATCH_ACTIVE_STATE)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(active)	INLINE_EXPR(LATDbits.LD7 = active ? DAC_LATCH_ACTIVE_STATE : DAC_LATCH_INACTIVE_STATE)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_TOGGLE()		INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_IS_ACTIVE() ? false : true))
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_INIT()		INLINE_EXPR(TRISDbits.TRISD7 = GPIO_BIT_OUTPUT)
+//
+//    // Pin D2
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_IS_ACTIVE()		(LATDbits.LATD2 == GPIO_HIGH)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(active)		INLINE_EXPR(LATDbits.LATD2 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_TOGGLE()			INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(!DAC_LEFT_RIGHT_MOVEMENT_DATA_IS_ACTIVE()))
+//    #define DAC_LEFT_RIGHT_MOVEMENT_DATA_INIT()				INLINE_EXPR(TRISDbits.TRISD2 = GPIO_BIT_OUTPUT)
+//
+//    // Pin D1
+//    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_IS_ACTIVE()			(LATDbits.LATD1 == GPIO_HIGH)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(active)			INLINE_EXPR(LATDbits.LATD1 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_TOGGLE()			INLINE_EXPR(DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(!DAC_LEFT_RIGHT_MOVEMENT_CLK_IS_ACTIVE()))
+//    #define DAC_LEFT_RIGHT_MOVEMENT_CLK_INIT()				INLINE_EXPR(TRISDbits.TRISD1 = GPIO_BIT_OUTPUT)
 #endif
 
 /* ***********************   Function Prototypes   ************************ */
@@ -146,23 +146,23 @@ static void LatchStateSet(DacSelect_t dac_id, bool active);
 //-------------------------------
 void dacBspInit(void)
 {
-	DAC_FWD_REV_MOVEMENT_DATA_LATCH_INIT();
-	DAC_FWD_REV_MOVEMENT_DATA_INIT();
-	DAC_FWD_REV_MOVEMENT_CLK_INIT();
-	
-	DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_INIT();
-	DAC_LEFT_RIGHT_MOVEMENT_DATA_INIT();
-	DAC_LEFT_RIGHT_MOVEMENT_CLK_INIT();
-	
-	// Put DAC control lines into "idle" state.
-	LatchStateSet(DAC_SELECT_FORWARD_BACKWARD, false);
-	LatchStateSet(DAC_SELECT_LEFT_RIGHT, false);
-	
-	ClockStateSet(DAC_SELECT_FORWARD_BACKWARD, true);
-	ClockStateSet(DAC_SELECT_LEFT_RIGHT, true);
-	
-	DataStateSet(DAC_SELECT_FORWARD_BACKWARD, false);
-	DataStateSet(DAC_SELECT_LEFT_RIGHT, false);
+//	DAC_FWD_REV_MOVEMENT_DATA_LATCH_INIT();
+//	DAC_FWD_REV_MOVEMENT_DATA_INIT();
+//	DAC_FWD_REV_MOVEMENT_CLK_INIT();
+//	
+//	DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_INIT();
+//	DAC_LEFT_RIGHT_MOVEMENT_DATA_INIT();
+//	DAC_LEFT_RIGHT_MOVEMENT_CLK_INIT();
+//	
+//	// Put DAC control lines into "idle" state.
+//	LatchStateSet(DAC_SELECT_FORWARD_BACKWARD, false);
+//	LatchStateSet(DAC_SELECT_LEFT_RIGHT, false);
+//	
+//	ClockStateSet(DAC_SELECT_FORWARD_BACKWARD, true);
+//	ClockStateSet(DAC_SELECT_LEFT_RIGHT, true);
+//	
+//	DataStateSet(DAC_SELECT_FORWARD_BACKWARD, false);
+//	DataStateSet(DAC_SELECT_LEFT_RIGHT, false);
 }
 
 //-------------------------------
@@ -188,24 +188,24 @@ void dacBspInit(void)
 //-------------------------------
 void dacBspSet(DacSelect_t dac_id, uint16_t val)
 {
-	ClockStateSet(dac_id, false);
-	
-	for (uint16_t i = 0; i < DAC_BSP_NUM_BITS; i++)
-	{
-		DataStateSet(dac_id, (val & ((uint16_t)1 << ((DAC_BSP_NUM_BITS - (uint16_t)1) - (uint16_t)i))) ? true : false);
-
-		ClockStateSet(dac_id, true);
-		
-		if (i == (DAC_BSP_NUM_BITS - 1))
-		{
-			LatchStateSet(dac_id, true);
-		}
-
-		ClockStateSet(dac_id, false);
-	}
-
-	LatchStateSet(dac_id, false);
-	ClockStateSet(dac_id, true);
+//	ClockStateSet(dac_id, false);
+//	
+//	for (uint16_t i = 0; i < DAC_BSP_NUM_BITS; i++)
+//	{
+//		DataStateSet(dac_id, (val & ((uint16_t)1 << ((DAC_BSP_NUM_BITS - (uint16_t)1) - (uint16_t)i))) ? true : false);
+//
+//		ClockStateSet(dac_id, true);
+//		
+//		if (i == (DAC_BSP_NUM_BITS - 1))
+//		{
+//			LatchStateSet(dac_id, true);
+//		}
+//
+//		ClockStateSet(dac_id, false);
+//	}
+//
+//	LatchStateSet(dac_id, false);
+//	ClockStateSet(dac_id, true);
 }
 
 /* ********************   Private Function Definitions   ****************** */
@@ -218,20 +218,20 @@ void dacBspSet(DacSelect_t dac_id, uint16_t val)
 //-------------------------------
 static void DataStateSet(DacSelect_t dac_id, bool high)
 {
-	switch (dac_id)
-	{
-		case DAC_SELECT_FORWARD_BACKWARD:
-			DAC_FWD_REV_MOVEMENT_DATA_SET(high);
-			break;
-
-		case DAC_SELECT_LEFT_RIGHT:
-			DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(high);
-			break;
-			
-		default:
-			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
-			break;
-	}
+//	switch (dac_id)
+//	{
+//		case DAC_SELECT_FORWARD_BACKWARD:
+//			DAC_FWD_REV_MOVEMENT_DATA_SET(high);
+//			break;
+//
+//		case DAC_SELECT_LEFT_RIGHT:
+//			DAC_LEFT_RIGHT_MOVEMENT_DATA_SET(high);
+//			break;
+//			
+//		default:
+//			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
+//			break;
+//	}
 }
 
 //-------------------------------
@@ -242,20 +242,20 @@ static void DataStateSet(DacSelect_t dac_id, bool high)
 //-------------------------------
 static void ClockStateSet(DacSelect_t dac_id, bool high)
 {
-	switch (dac_id)
-	{
-		case DAC_SELECT_FORWARD_BACKWARD:
-			DAC_FWD_REV_MOVEMENT_CLK_SET(high);
-			break;
-
-		case DAC_SELECT_LEFT_RIGHT:
-			DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(high);
-			break;
-			
-		default:
-			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
-			break;
-	}
+//	switch (dac_id)
+//	{
+//		case DAC_SELECT_FORWARD_BACKWARD:
+//			DAC_FWD_REV_MOVEMENT_CLK_SET(high);
+//			break;
+//
+//		case DAC_SELECT_LEFT_RIGHT:
+//			DAC_LEFT_RIGHT_MOVEMENT_CLK_SET(high);
+//			break;
+//			
+//		default:
+//			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
+//			break;
+//	}
 }
 
 //-------------------------------
@@ -266,20 +266,20 @@ static void ClockStateSet(DacSelect_t dac_id, bool high)
 //-------------------------------
 static void LatchStateSet(DacSelect_t dac_id, bool active)
 {
-	switch (dac_id)
-	{
-		case DAC_SELECT_FORWARD_BACKWARD:
-			DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(active);
-			break;
-
-		case DAC_SELECT_LEFT_RIGHT:
-			DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(active);
-			break;
-			
-		default:
-			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
-			break;
-	}
+//	switch (dac_id)
+//	{
+//		case DAC_SELECT_FORWARD_BACKWARD:
+//			DAC_FWD_REV_MOVEMENT_DATA_LATCH_SET(active);
+//			break;
+//
+//		case DAC_SELECT_LEFT_RIGHT:
+//			DAC_LEFT_RIGHT_MOVEMENT_DATA_LATCH_SET(active);
+//			break;
+//			
+//		default:
+//			ASSERT(dac_id == DAC_SELECT_LEFT_RIGHT);
+//			break;
+//	}
 }
 
 // end of file.

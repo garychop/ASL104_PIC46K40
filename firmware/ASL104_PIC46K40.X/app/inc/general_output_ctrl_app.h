@@ -61,11 +61,13 @@
  ********************************************************************************************************
  */
 
+// 12/12/20 GChop. For now i'm removing the General Output Control because
+// of inconsistent behaviour.
 bool GenOutCtrlApp_Init(void);
-void GenOutCtrlApp_SetStateAll(GenOutState_t ctrlr_state);
-void GenOutCtrlApp_SetState(GenOutCtrlId_t item_id, GenOutState_t ctrlr_state);
-bool genOutCtrlAppNeedSendEvent(void);
-Evt_t genOutCtrlAppWakeEvent(void);
+//void GenOutCtrlApp_SetStateAll(GenOutState_t ctrlr_state);
+//void GenOutCtrlApp_SetState(GenOutCtrlId_t item_id, GenOutState_t ctrlr_state);
+//bool genOutCtrlAppNeedSendEvent(void);
+//Evt_t genOutCtrlAppWakeEvent(void);
 
 // End of Doxygen grouping
 /** @} */

@@ -44,15 +44,15 @@
     #define TEST_GPIO_1_TOGGLE()		INLINE_EXPR(TEST_GPIO_1_SET(TEST_GPIO_1_IS_ACTIVE() ? false : true))
     #define TEST_GPIO_1_INIT()			INLINE_EXPR(TRISAbits.TRISA4 = GPIO_BIT_OUTPUT; TEST_GPIO_1_SET(false); ANSELAbits.ANSELA4 = 0)
 #else
-    #define TEST_GPIO_0_IS_ACTIVE()		(LATAbits.LA3 == GPIO_HIGH)
-    #define TEST_GPIO_0_SET(active)		INLINE_EXPR(LATAbits.LA3 = active ? GPIO_HIGH : GPIO_LOW)
-    #define TEST_GPIO_0_TOGGLE()		INLINE_EXPR(TEST_GPIO_0_SET(TEST_GPIO_0_IS_ACTIVE() ? false : true))
-    #define TEST_GPIO_0_INIT()			INLINE_EXPR(TRISAbits.TRISA3 = GPIO_BIT_OUTPUT; TEST_GPIO_0_SET(false))
-
-    #define TEST_GPIO_1_IS_ACTIVE()		(LATAbits.LA4 == GPIO_HIGH)
-    #define TEST_GPIO_1_SET(active)		INLINE_EXPR(LATAbits.LA4 = active ? GPIO_HIGH : GPIO_LOW)
-    #define TEST_GPIO_1_TOGGLE()		INLINE_EXPR(TEST_GPIO_1_SET(TEST_GPIO_1_IS_ACTIVE() ? false : true))
-    #define TEST_GPIO_1_INIT()			INLINE_EXPR(TRISAbits.TRISA4 = GPIO_BIT_OUTPUT; TEST_GPIO_1_SET(false))
+//    #define TEST_GPIO_0_IS_ACTIVE()		(LATAbits.LA3 == GPIO_HIGH)
+//    #define TEST_GPIO_0_SET(active)		INLINE_EXPR(LATAbits.LA3 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define TEST_GPIO_0_TOGGLE()		INLINE_EXPR(TEST_GPIO_0_SET(TEST_GPIO_0_IS_ACTIVE() ? false : true))
+//    #define TEST_GPIO_0_INIT()			INLINE_EXPR(TRISAbits.TRISA3 = GPIO_BIT_OUTPUT; TEST_GPIO_0_SET(false))
+//
+//    #define TEST_GPIO_1_IS_ACTIVE()		(LATAbits.LA4 == GPIO_HIGH)
+//    #define TEST_GPIO_1_SET(active)		INLINE_EXPR(LATAbits.LA4 = active ? GPIO_HIGH : GPIO_LOW)
+//    #define TEST_GPIO_1_TOGGLE()		INLINE_EXPR(TEST_GPIO_1_SET(TEST_GPIO_1_IS_ACTIVE() ? false : true))
+//    #define TEST_GPIO_1_INIT()			INLINE_EXPR(TRISAbits.TRISA4 = GPIO_BIT_OUTPUT; TEST_GPIO_1_SET(false))
 #endif
 
 /* *******************   Public Function Definitions   ******************** */
@@ -66,8 +66,11 @@
 //-------------------------------
 void testGpioInit(void)
 {
-	TEST_GPIO_0_INIT();
-	TEST_GPIO_1_INIT();
+//    TRISEbits.TRISE0 = GPIO_BIT_OUTPUT;         // LED1 control
+//    TRISEbits.TRISE1 = GPIO_BIT_OUTPUT;         // LED2 control
+//    TRISEbits.TRISE2 = GPIO_BIT_OUTPUT;         // LED3 control
+//    TRISCbits.TRISC0 = GPIO_BIT_OUTPUT;         // LED4 control
+//    TRISAbits.TRISA1 = GPIO_BIT_OUTPUT;         // LED5 control
 }
 
 //-------------------------------
@@ -78,23 +81,23 @@ void testGpioInit(void)
 // NOTE: Execution time for this function is ~18.4us @10MHz system clock
 //
 //-------------------------------
-inline void testGpioSet(TestGpio_t gpio_id, bool is_high)
-{
-	switch (gpio_id)
-	{
-		case TEST_GPIO_0:
-			TEST_GPIO_0_SET(is_high);
-			break;
-			
-		case TEST_GPIO_1:
-			TEST_GPIO_1_SET(is_high);
-			break;
-		
-		default:
-			(void)0;
-			break;
-	}
-}
+//inline void testGpioSet(TestGpio_t gpio_id, bool is_high)
+//{
+//	switch (gpio_id)
+//	{
+//		case TEST_GPIO_0:
+//			TEST_GPIO_0_SET(is_high);
+//			break;
+//			
+//		case TEST_GPIO_1:
+//			TEST_GPIO_1_SET(is_high);
+//			break;
+//		
+//		default:
+//			(void)0;
+//			break;
+//	}
+//}
 
 //-------------------------------
 // Function: testGpioToggle
@@ -104,23 +107,23 @@ inline void testGpioSet(TestGpio_t gpio_id, bool is_high)
 // NOTE: Execution time for this function is between 14.8 us and 16.8 us @10MHz system clock
 //
 //-------------------------------
-inline void testGpioToggle(TestGpio_t gpio_id)
-{
-	switch (gpio_id)
-	{
-		case TEST_GPIO_0:
-			TEST_GPIO_0_TOGGLE();
-			break;
-			
-		case TEST_GPIO_1:
-			TEST_GPIO_1_TOGGLE();
-			break;
-		
-		default:
-			(void)0;
-			break;
-	}
-}
+//inline void testGpioToggle(TestGpio_t gpio_id)
+//{
+//	switch (gpio_id)
+//	{
+//		case TEST_GPIO_0:
+//			TEST_GPIO_0_TOGGLE();
+//			break;
+//			
+//		case TEST_GPIO_1:
+//			TEST_GPIO_1_TOGGLE();
+//			break;
+//		
+//		default:
+//			(void)0;
+//			break;
+//	}
+//}
 #endif
 
 // end of file.

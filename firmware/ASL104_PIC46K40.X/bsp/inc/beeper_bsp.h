@@ -23,6 +23,7 @@
 void beeperBspInit(void);
 void beeperBspActiveSet(bool active);
 bool beeperBspActiveGet(void);
+bool IsBeepFeatureEnable (void);
 
 #endif // BEEPER_BSP_H
 

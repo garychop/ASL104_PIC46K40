@@ -20,19 +20,20 @@ typedef enum
 	HEAD_ARRAY_SENSOR_LEFT,
 	HEAD_ARRAY_SENSOR_RIGHT,
 	HEAD_ARRAY_SENSOR_CENTER,
+    HEAD_ARRAY_SENSOR_BACK,
 
 	// Nothing else may be defined past this point!
 	HEAD_ARRAY_SENSOR_EOL
 } HeadArraySensor_t;
 
-typedef enum
-{
-	DAC_SELECT_FORWARD_BACKWARD,
-	DAC_SELECT_LEFT_RIGHT,
-
-	// Nothing else may be defined past this point!
-	DAC_SELECT_SENSOR_EOL
-} DacSelect_t;
+//typedef enum
+//{
+//	DAC_SELECT_FORWARD_BACKWARD,
+//	DAC_SELECT_LEFT_RIGHT,
+//
+//	// Nothing else may be defined past this point!
+//	DAC_SELECT_SENSOR_EOL
+//} DacSelect_t;
 
 #endif // HEAD_ARRAY_COMMON_H
 

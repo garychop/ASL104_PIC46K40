@@ -82,7 +82,7 @@ __interrupt(low_priority) void lowPrioIsr(void)
 		// The system must be able to handle missing any number of ticks that are missed when os_tick() is disabled.
 		if (can_process_os_ticks)
 		{
-			testGpioToggle(TEST_GPIO_0); // TODO: remove this. Only here for test.
+			//testGpioToggle(TEST_GPIO_0); // TODO: remove this. Only here for test.
 			os_task_tick(0, num_os_ticks_to_process);
 			num_os_ticks_to_process = 0;
 		}

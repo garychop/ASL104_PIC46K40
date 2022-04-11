@@ -59,12 +59,8 @@
  ********************************************************************************************************
  */
 /****************************************** Symbolic Constants ******************************************/
-/// Must be the last entry in a state steps definition list. Defines end of the list.
-#define GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL ((GenOutCtrlTime_t)0xFFFF)
-
 #define GEN_OUT_CTRL_REPEAT_PATTERN_FOREVER_VAL ((GenOutCtrlTime_t)0)
 
-/// Must be the last entry in a state steps definition list. Defines end of the list.
 #define GEN_OUT_CTRL_END_OF_STATE { GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL, GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL, GEN_OUT_CTRL_REPEAT_PATTERN_FOREVER_VAL }
 
 /// Has an output controller in an active state forever.
@@ -72,6 +68,9 @@
 
 /// Has an output controller in an inactive state forever.
 #define GEN_OUT_CTRL_ALWAYS_OFF { 0, GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL, GEN_OUT_CTRL_REPEAT_PATTERN_FOREVER_VAL }
+
+/// Must be the last entry in a state steps definition list. Defines end of the list.
+#define GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL ((GenOutCtrlTime_t)0xFFFF)
 
 /*
  ********************************************************************************************************

@@ -57,6 +57,7 @@
  ********************************************************************************************************
  */
 
+void GenOutCtrlBsp_INIT(void);
 bool GenOutCtrlBsp_Enable(GenOutCtrlId_t item_id);
 bool GenOutCtrlBsp_Disable(GenOutCtrlId_t item_id);
 bool GenOutCtrlBsp_SetActive(GenOutCtrlId_t item_id);

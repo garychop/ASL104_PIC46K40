@@ -23,6 +23,11 @@
 void ButtonBspInit(void);
 bool userButtonBspIsActive(void);
 bool ModeButtonBspIsActive(void);
+bool BT_LED_IsActive(void);
+
+bool Is_SW1_ON(void);
+bool Is_SW3_ON(void);
+bool Is_SW6_ON(void);
 
 #endif // USER_BUTTON_BSP_H
 

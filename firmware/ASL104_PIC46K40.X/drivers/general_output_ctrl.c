@@ -66,6 +66,8 @@
 
 #if defined(GENERAL_OUTPUT_CTRL_MODULE_ENABLE)
 
+#ifdef OK_TO_USE_OUTPUT_CONTROL
+
 /*
  ********************************************************************************************************
  *                                               DATA TYPES
@@ -1081,7 +1083,8 @@ static bool StateCtrlr_NextControlSubstep(OutputCtrlrState_t *ctrl)
  */
 static bool StateCtrlr_EndOfList(OutputCtrlrState_t *ctrl)
 {
-    if ((ctrl->curr_state_obj->steps[ctrl->curr_index].off_time_ms == GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL) &&
+    if ((ctrl->curr_state_obj != NULL) &&
+        (ctrl->curr_state_obj->steps[ctrl->curr_index].off_time_ms == GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL) &&
         (ctrl->curr_state_obj->steps[ctrl->curr_index].on_time_ms == GEN_OUT_CTRL_ALWAYS_IN_STATE_VAL))
     {
         return true;
@@ -1224,6 +1227,8 @@ static bool DefaultCbFunc(void)
 
 // End of Doxygen grouping
 /** @} */
+
+#endif // #ifdef OK_TO_USE_OUTPUT_CONTROL
 
 #endif
 

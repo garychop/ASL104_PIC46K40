@@ -101,13 +101,16 @@
 
 	// CONFIG1H
 	#pragma config FOSC		= HS	// Oscillator Selection bits (HS oscillator (HS))
+//GC Original	#pragma config FCMEN	= OFF	// Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
 	#pragma config FCMEN	= OFF	// Fail-Safe Clock Monitor Enable bit (Fail-Safe Clock Monitor disabled)
 	#pragma config IESO		= OFF	// Internal/External Oscillator Switchover bit (Oscillator Switchover mode disabled)
+//GC Original 	#pragma config IESO		= OFF	// Internal/External Oscillator Switchover bit (Oscillator Switchover mode disabled)
 
 	// CONFIG2L
 	#pragma config PWRT		= OFF	// Power-up Timer Enable bit (PWRT disabled)
-	#pragma config BOR		= ON	// Brown-out Reset Enable bits (Brown-out Reset enabled in hardware only (SBOREN is disabled))
+	#pragma config BOR		= OFF	// Brown-out Reset Enable bits (Brown-out Reset enabled in hardware only (SBOREN is disabled))
 	#pragma config BORV		= 3		// Brown-out Reset Voltage bits (Minimum setting 2.05V)
+//GC Original	#pragma config BORV		= 3		// Brown-out Reset Voltage bits (Minimum setting 2.05V)
 	#pragma config VREGEN	= OFF	// USB Voltage Regulator Enable bit (USB voltage regulator disabled)
 
 	// CONFIG2H
@@ -120,13 +123,17 @@
 
 	// CONFIG3H
 	#pragma config CCP2MX	= ON	// CCP2 MUX bit (CCP2 input/output is multiplexed with RC1)
-	#pragma config PBADEN	= ON	// PORTB A/D Enable bit (PORTB<4:0> pins are configured as analog input channels on Reset)
-	#pragma config LPT1OSC	= OFF	// Low-Power Timer 1 Oscillator Enable bit (Timer1 configured for higher power operation)
+//GC Original    #pragma config PBADEN	= ON	// PORTB A/D Enable bit (PORTB<4:0> pins are configured as analog input channels on Reset)
+	#pragma config PBADEN	= OFF	// PORTB A/D Enable bit (PORTB<4:0> pins are configured as analog input channels on Reset)
+    #pragma config LPT1OSC	= OFF	// Low-Power Timer 1 Oscillator Enable bit (Timer1 configured for higher power operation)
+//GC Returned to OFF	#pragma config LPT1OSC	= ON	// Low-Power Timer 1 Oscillator Enable bit (Timer1 configured for higher power operation)
 	#pragma config MCLRE	= ON	// MCLR Pin Enable bit (MCLR pin enabled; RE3 input pin disabled)
 
 	// CONFIG4L
-	#pragma config STVREN 	= ON	// Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
-	#pragma config LVP 		= ON	// Single-Supply ICSP Enable bit (Single-Supply ICSP enabled)
+//GC Original	#pragma config STVREN 	= ON	// Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
+	#pragma config STVREN 	= OFF	// Stack Full/Underflow Reset Enable bit (Stack full/underflow will cause Reset)
+//GC Original	#pragma config LVP 		= ON	// Single-Supply ICSP Enable bit (Single-Supply ICSP enabled)
+	#pragma config LVP 		= OFF	// Single-Supply ICSP Enable bit (Single-Supply ICSP enabled)
 	#pragma config ICPRT 	= OFF	// Dedicated In-Circuit Debug/Programming Port (ICPORT) Enable bit (ICPORT disabled)
 	#pragma config XINST 	= OFF	// Extended Instruction Set Enable bit (Instruction set extension and Indexed Addressing mode disabled (Legacy mode))
 
@@ -155,10 +162,10 @@
 	#pragma config EBTR0	= OFF	// Table Read Protection bit (Block 0 (000800-001FFFh) is not protected from table reads executed in other blocks)
 	#pragma config EBTR1	= OFF	// Table Read Protection bit (Block 1 (002000-003FFFh) is not protected from table reads executed in other blocks)
 	#pragma config EBTR2	= OFF	// Table Read Protection bit (Block 2 (004000-005FFFh) is not protected from table reads executed in other blocks)
-	#pragma config EBTR3	= OFF	// Table Read Protection bit (Block 3 (006000-007FFFh) is not protected from table reads executed in other blocks)
+    #pragma config EBTR3	= OFF	// Table Read Protection bit (Block 3 (006000-007FFFh) is not protected from table reads executed in other blocks)
 
 	// CONFIG7H
-	#pragma config EBTRB	= OFF	// Boot Block Table Read Protection bit (Boot block (000000-0007FFh) is not protected from table reads executed in other blocks)
+    #pragma config EBTRB	= OFF	// Boot Block Table Read Protection bit (Boot block (000000-0007FFh) is not protected from table reads executed in other blocks)
 
 #endif
 

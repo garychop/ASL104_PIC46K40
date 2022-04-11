@@ -28,6 +28,7 @@
 #include "common.h"
 #include "stopwatch.h"
 #include "app_common.h"
+#include "inc/MainState.h"
 
 // from local
 #include "beeper_bsp.h"
@@ -38,123 +39,107 @@
 // Defines the "beep" type
 typedef struct
 {
-	// On time in milliseconds.
-	TimerTick_t on_time_ms;
+	TimerTick_t on_time_ms;     // On time in milliseconds OR pattern ID (BeepPattern_t)
 	
-	// Off time in milliseconds.
-	TimerTick_t off_time_ms;
+	TimerTick_t off_time_ms;    // Off time in milliseconds or Usage Flag
 } Beep_t;
+
+#define BEEP_ALWAYS (0)
+#define BEEP_SMART (1)
+
+#define MAX_BEEPS_PER_PATTERN (4)
+#define MAX_BEEP_PATTERNS (10)
+//#define BEEP_POOL_SIZE (2)
+#define END_BEEP (0xffff)
+#define CHIRP (0x0)
+
+//-----------------------------------------------------------------------------
+// NOTE: Using the following union cause the application to misbehave and
+// go into the woods. I abandoned this just using the first entry in the
+// beep sequence table as the pattern ID and Enable flag.
+typedef struct
+{
+    union {
+        struct {
+            TimerTick_t on_time_ms;     // On time in milliseconds.
+            TimerTick_t off_time_ms;    // Off time in milliseconds.
+        };
+        struct {
+            //I'm using TimerTick_t to ensure proper alignment in beeper pattern
+            // declarations.
+            TimerTick_t m_PatternID;
+            TimerTick_t m_Allowed;      // 0=always announce, 1=based upon Beeper Enabled.
+        };
+    };
+} Beep_t_DONT_USE_CUZ_BAD_THINGS_HAPPEN;
+//-----------------------------------------------------------------------------
+
+
+/* ***********************   Project Scope Variables   *********************** */
+
+BeepPattern_t g_NewBeepPattern;
+BeepPattern_t g_PendingBeepPattern;
 
 /* ***********************   File Scope Variables   *********************** */
 
-static uint8_t blocking_task_id;
-static volatile BeepPattern_t session_pattern;
-static volatile uint8_t curr_session_cycle;
-static bool beeper_is_running = false;
-static BeepPattern_t curr_session_pattern;
+//static Msg_t g_BeepMsgPool[BEEP_POOL_SIZE];
+static uint8_t g_PatternIndex;
+static uint8_t g_PatternStep;
+static void (*BeepStateEngine)(void);
 
-static StopWatch_t beep_stopwatch = {0, false};
+uint8_t g_BeeperTaskID = 0;
+int IGotAMsg = 0;
+static Msg_t g_LastBeepMsg;
+static bool g_NewBeep = false;
+static uint16_t g_Delay;
 
-static Beep_t beep_pattern_function[] =
+const Beep_t g_BeepPatterns[MAX_BEEP_PATTERNS][MAX_BEEPS_PER_PATTERN] = 
 {
-	{50, 0}
-};
-
-// NOTE: Make sure that the values in the table below are multiples of the BeepPatternTask task execution rate.
-static Beep_t beep_pattern_long_press[] =
-{
-	{25, 50},
-	{25, 50},
-	{50, 0}
-};
-
-// NOTE: Make sure that the values in the table below are multiples of the BeepPatternTask task execution rate.
-static Beep_t beep_pattern_eeprom_not_init_on_boot[] =
-{
-	{25, 50},
-	{50, 0}
-};
-
-static Beep_t g_AnnouncePowerOnOffFeature[] =
-{
-//    {25, 50},
-//    {25, 50},
-//    {50, 300},
-    {150, 0}
-};
-static Beep_t g_AnnounceBluetoothFeature[] =
-{
-//    {25, 50},
-//    {25, 50},
-//    {50, 300},
-    {100, 200},
-    {100, 200}
-};
-static Beep_t g_AnnounceNextFunctionFeature[] =
-{
-//    {25, 50},
-//    {25, 50},
-//    {50, 300},
-    {100, 200},
-    {100, 200},
-    {100, 200}
-};
-static Beep_t g_AnnounceNextProfileFeature[] =
-{
-//    {25, 50},
-//    {25, 50},
-//    {50, 300},
-    {100, 200},
-    {100, 200},
-    {100, 200},
-    {100, 200}
-};
-static Beep_t g_AnnounceRNetFeature[] =
-{
-    {100, 200},
-    {100, 200},
-    {100, 200},
-    {100, 200},
-    {100, 200}
-};
-static Beep_t g_AnnounceModeSwitchActive[] =
-{
-    {37, 50},
-    {25, 0}
-};
-
-static Beep_t g_AnnounceRNet_Sleep_Feature[] =
-{
-    {50, 200},
-    {50, 200},
-    {50, 200},
-    {100, 200},
-    {100, 200},
-    {100, 200}
-};
-
-// Priorities for beep patterns.  If a beep pattern of higher priority than one that's running
-// is requested, then the higher priority one takes over.
-//
-// NOTE: Must match BeepPattern_t exactly
-static const bool beep_pattern_prio[(int)BEEPER_PATTERN_EOL] =
-{
-    3,  // ANNOUNCE_POWER_ON
-    4,  // ANNOUNCE_BLUETOOTH
-    5,  // ANNOUNCE_NEXT_FUNCTION
-    6,  // ANNOUNCE_NEXT_PROFILE
-    8,  // BEEPER_PATTERN_RNET_MNEU_ACTIVE
-	1,	// BEEPER_PATTERN_USER_BUTTON_SHORT_PRESS
-	2,	// BEEPER_PATTERN_USER_BUTTON_LONG_PRESS
-    7,  // BEEPER_PATTERN_MODE_ACTIVE
-    9,  // ANNOUNC_RNET_SLEEP_FEATURE
-	0	// BEEPER_PATTERN_EEPROM_NOT_INIT_ON_BOOT
+    {//[0]   // Pad Active beep pattern
+        {BEEPER_PATTERN_PAD_ACTIVE,BEEP_SMART},
+        {CHIRP, 50},
+        {END_BEEP,0}
+    },
+    {//[1]
+        {BEEPER_PATTERN_USER_BUTTON_SHORT_PRESS,BEEP_ALWAYS},
+        {200, 0},
+        {END_BEEP,0}
+    },
+    {//[2]
+        {ANNOUNCE_BLUETOOTH,BEEP_ALWAYS},
+        {2000, 50},
+        {END_BEEP,0}
+    },
+    {//[3]
+        {ANNOUNCE_POWER_ON, BEEP_ALWAYS},
+        {CHIRP, 50},
+        {END_BEEP,0}
+    },
+    {//[4]
+        {BEEPER_PATTERN_GOTO_IDLE, 0},
+        {50, 150},
+        {50, 50},
+        {END_BEEP,0}
+    },
+    {//[5]
+        {BEEPER_PATTERN_RESUME_DRIVING,BEEP_ALWAYS},
+        {100, 0},
+        {END_BEEP,0}
+    },
+    {
+        {ANNOUNCE_BEEPER_RNET_SLEEP, BEEP_ALWAYS},
+        {3000,0},
+        {END_BEEP,0}
+    },// {END_BEEP,0}, {END_BEEP,0},  {END_BEEP,0} },  // [6]
+    { {BEEPER_PATTERN_EOL, 0}},// {END_BEEP,0}, {END_BEEP,0},  {END_BEEP,0} },  // [7]
+    { {BEEPER_PATTERN_EOL, 0}},// {END_BEEP,0}, {END_BEEP,0},  {END_BEEP,0} },  // [8]
+    { {BEEPER_PATTERN_EOL, 0}} // {END_BEEP,0}, {END_BEEP,0},  {END_BEEP,0} },  // [9]
 };
 
 static Evt_t os_event_start_beep_seq_id;
 static Evt_t os_event_beep_seq_complete;
-static uint8_t beeper_task_id;
-static volatile bool signal_calling_task;
+//static uint8_t beeper_task_id;
+//static volatile bool signal_calling_task;
 
 // Protects access to critical sections of code in this module
 static volatile Sem_t data_lock_mutex;
@@ -162,14 +147,117 @@ static volatile Sem_t data_lock_mutex;
 /* ***********************   Function Prototypes   ************************ */
 
 static void BeepPatternTask(void);
-static Evt_t BeepPatternStart(BeepPattern_t pattern);
-static Evt_t BeepPatternStop(void);
-static bool CanRunBeepPattern(BeepPattern_t pattern);
-static uint8_t BeepPatternNumCycles(BeepPattern_t pattern);
-static Beep_t *BeepPatternPatternGet(BeepPattern_t pattern);
-static void StartBeepPattern(void);
+
+// State Engine
+static void BeepReady (void);
+static void StopBeeping (void);
+static void WaitForStopping (void);
+static void WeBeMakingNoise (void);
+static void BeeperOffDelay (void);
 
 /* *******************   Public Function Definitions   ******************** */
+
+static void BeepReady (void)
+{
+    if (g_NewBeep)
+    {
+        g_NewBeep = false;      // Ok, we can clear the request for a new beep sequence
+        g_PatternStep = 1;      // Point to the first step in the Beep Sequence.
+        beeperBspActiveSet (true); // Turn on beeping
+        g_Delay = g_BeepPatterns[g_PatternIndex][g_PatternStep].on_time_ms / BEEPER_TASK_DELAY;
+        // I want to replicate the "chirpping" sound that the current 104 makes.
+        if (g_Delay == CHIRP)
+        {
+            BeepStateEngine = StopBeeping;
+        }
+        else
+        {
+            BeepStateEngine = WeBeMakingNoise;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+static void WeBeMakingNoise (void)
+{
+    if (g_Delay > 0)
+        --g_Delay;
+
+    if (g_Delay == 0)
+    {
+        beeperBspActiveSet (false); // Turn off beeping
+        if (g_BeepPatterns[g_PatternIndex][g_PatternStep].off_time_ms == 0)
+        {
+            BeepStateEngine = StopBeeping;
+        }
+        else
+        {
+            g_Delay = g_BeepPatterns[g_PatternIndex][g_PatternStep].off_time_ms / BEEPER_TASK_DELAY;
+            BeepStateEngine = BeeperOffDelay;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+static void BeeperOffDelay (void)
+{
+    if (g_Delay > 0)
+        --g_Delay;
+
+    if (g_Delay == 0)
+    {
+        ++g_PatternStep;
+        if (g_BeepPatterns[g_PatternIndex][g_PatternStep].on_time_ms == END_BEEP)
+        {
+            BeepStateEngine = BeepReady;
+        }
+        else // We have more beeps
+        {
+            beeperBspActiveSet (true); // Turn on beeping
+            g_Delay = g_BeepPatterns[g_PatternIndex][g_PatternStep].on_time_ms / BEEPER_TASK_DELAY;
+            // I want to replicate the "chirpping" sound that the current 104 makes.
+            if (g_Delay == CHIRP)
+            {
+                BeepStateEngine = StopBeeping;
+            }
+            else
+            {
+                BeepStateEngine = WeBeMakingNoise;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+static void StopBeeping (void)
+{
+    beeperBspActiveSet (false); // Turn off beeping
+    g_Delay = g_BeepPatterns[g_PatternIndex][g_PatternStep].off_time_ms / BEEPER_TASK_DELAY;
+    BeepStateEngine = WaitForStopping;
+}
+
+//------------------------------------------------------------------------------
+
+static void ForceStopBeeping (void)
+{
+    beeperBspActiveSet (false); // Turn off beeping
+    g_Delay = 500 / BEEPER_TASK_DELAY;  // 1/2 second delay
+    BeepStateEngine = WaitForStopping;
+}
+
+//------------------------------------------------------------------------------
+
+static void WaitForStopping (void)
+{
+    if (g_Delay > 0)
+        --g_Delay;
+
+    if (g_Delay == 0)
+        BeepStateEngine = BeepReady;
+}
 
 //-------------------------------
 // Function: beeperInit
@@ -181,18 +269,84 @@ void beeperInit(void)
 {
 	beeperBspInit();
 	
-	blocking_task_id = NO_TID;
-	session_pattern = BEEPER_PATTERN_EOL;
-	curr_session_pattern = BEEPER_PATTERN_EOL;
-	curr_session_cycle = 0;
-	beeper_is_running = false;
-	signal_calling_task = false;
+	//blocking_task_id = NO_TID;
+	//session_pattern = BEEPER_PATTERN_EOL;
+	//curr_session_pattern = BEEPER_PATTERN_EOL;
+	//curr_session_cycle = 0;
+	//beeper_is_running = false;
+	//signal_calling_task = false;
 
     data_lock_mutex = sem_bin_create(1); // Set up so the first task to try and take the semaphore succeeds
 
-	os_event_start_beep_seq_id = event_create();
-	os_event_beep_seq_complete = event_create();
-    beeper_task_id = task_create(BeepPatternTask, NULL, BEEPER_MGMT_TASK_PRIO, NULL, 0, 0 );
+    g_NewBeepPattern = BEEPER_PATTERN_EOL; // Indicate that we have processed the request
+    g_NewBeep = false;      // Ok, we can clear the request for a new beep sequence
+    BeepStateEngine = BeepReady;
+
+	//os_event_start_beep_seq_id = event_create();
+	//os_event_beep_seq_complete = event_create();
+//    beeper_task_id = task_create(BeepPatternTask, NULL, BEEPER_MGMT_TASK_PRIO, NULL, 0, 0 );
+//    g_BeeperTaskID = task_create(BeepPatternTask, NULL, BEEPER_MGMT_TASK_PRIO, g_BeepMsgPool, BEEP_POOL_SIZE, sizeof (Msg_t)); // sizeof (BeepMsg_t));
+    g_BeeperTaskID = task_create(BeepPatternTask, NULL, BEEPER_MGMT_TASK_PRIO, NULL, 0, 0);
+
+}
+
+//-------------------------------
+// Function: BeepPatternTick
+//
+// Description: Handles state control for a beep session.
+//
+//	Must be called from within a stable timing construct.
+//
+//-------------------------------
+
+static void BeepPatternTask(void)
+{
+    BeepPattern_t pattern;
+    
+    task_open();
+
+    while (1)
+    {
+        task_wait(MILLISECONDS_TO_TICKS(BEEPER_TASK_DELAY));
+
+        if (g_NewBeepPattern != BEEPER_PATTERN_EOL)
+        {
+            pattern = g_NewBeepPattern;     // Get a local copy of the new pattern right away.
+            g_NewBeepPattern = BEEPER_PATTERN_EOL; // Indicate that we have processed the request
+            ++IGotAMsg;
+            
+            // locate the beep pattern
+            for (uint8_t i = 0; i<MAX_BEEP_PATTERNS; ++i)
+            {
+                // The first item in the Beep Sequence represents the beep pattern
+                // and the Beep Allowance information.
+                if (g_BeepPatterns[i][0].on_time_ms == BEEPER_PATTERN_EOL)  // End of list?
+                    break;
+                // Check to see if we can (always) beep or if we
+                // have to be smart about it and look at the DIP switch.
+                if (g_BeepPatterns[i][0].on_time_ms == pattern)
+                {
+                    if (g_BeepPatterns[i][0].off_time_ms == BEEP_SMART)
+                    {
+                        if (IsBeepEnabled() == false)   // We are NOT going to beep.
+                            break;
+                    }
+                    g_NewBeep = true;
+                    g_PatternIndex = i;
+                    if (BeepStateEngine != BeepReady)
+                    {
+                        BeepStateEngine = ForceStopBeeping;
+                    }
+                    break;
+                }
+            }
+
+        }
+        
+
+        BeepStateEngine();
+	}
+    task_close();
 }
 
 //-------------------------------
@@ -203,397 +357,30 @@ void beeperInit(void)
 // Note: If a beep session is running, new ones are ignored unless of higher priority
 //
 //-------------------------------
-Evt_t beeperBeep(BeepPattern_t pattern)
+void beeperBeep(BeepPattern_t pattern)
 {
-	if (appCommonSoundEnabled())
-	{
-		return BeepPatternStart(pattern);
-	}
-	else
-	{
-		return NO_EVENT;
-	}
-}
-
-//-------------------------------
-// Function: beeperBeepBlocking
-//
-// Description: Beeps a pattern, in a blocking way.
-//
-// Usage:
-// event_signal(BeeperBeepBlocking(PATTERN));
-// event_wait(BeeperWaitUntilPatternCompletes());
-//
-//-------------------------------
-Evt_t beeperBeepBlocking(BeepPattern_t pattern)
-{
-	if (appCommonSoundEnabled())
-	{
-		// TODO: Test this when we need it. It is written, but untested
-		signal_calling_task = true;
-		blocking_task_id = running_tid;
-
-		return BeepPatternStart(pattern);
-	}
-	else
-	{
-		return NO_EVENT;
-	}
-}
-
-//-------------------------------
-// Function: BeeperWaitUntilPatternCompletes
-//
-// Description: See beeperBeepBlocking
-//
-//-------------------------------
-Evt_t BeeperWaitUntilPatternCompletes(void)
-{
-	return os_event_beep_seq_complete;
-}
-
-/* ********************   Private Function Definitions   ****************** */
-
-
-//-------------------------------
-// Function: BeepPatternTick
-//
-// Description: Handles state control for a beep session.
-//
-//	Must be called from within a stable timing construct.
-//
-//-------------------------------
-static void BeepPatternTask(void)
-{
-    task_open();
-
-	uint32_t wait_time_ms = MILLISECONDS_TO_TICKS(25);
-
-	// Someone desires a beep sequence on boot.  So, we shall go ahead and carry out the sequence.
-	if (session_pattern != BEEPER_PATTERN_EOL)
-	{
-		StartBeepPattern();
-	}
-
-    while (1)
+    if (BeepStateEngine != BeepReady)
     {
-		// Look for signals from other tasks or wait some amount of time if running a beep pattern.
-		if (!beeper_is_running)
-		{
-			event_wait(os_event_start_beep_seq_id);
-		}
-		else
-		{
-			event_wait_timeout(os_event_start_beep_seq_id, wait_time_ms);
-		}
-
-		if (curr_session_pattern != session_pattern)
-		{
-			if (session_pattern == BEEPER_PATTERN_EOL)
-			{
-				// Stop the all the beeping!
-				Evt_t notif_evt_id = BeepPatternStop();
-
-				if (notif_evt_id != NO_EVENT)
-				{
-					event_signal(notif_evt_id);
-					signal_calling_task = false;
-				}
-			}
-			else if (CanRunBeepPattern(session_pattern))
-			{
-				if (beeper_is_running)
-				{
-					// Stop the current beep pattern
-					Evt_t notif_evt_id = BeepPatternStop();
-
-					if (notif_evt_id != NO_EVENT)
-					{
-						event_signal(notif_evt_id);
-						signal_calling_task = false;
-					}
-				}
-
-				StartBeepPattern();
-			}
-			
-			session_pattern = curr_session_pattern;
-		}
-
-		if (beeper_is_running)
-		{
-			Beep_t *curr_beep_pattern = BeepPatternPatternGet(session_pattern);
-			TimerTick_t session_time_elapsed_in_cycle_ms = stopwatchTimeElapsed(&beep_stopwatch, false);
-			
-			if (session_time_elapsed_in_cycle_ms < curr_beep_pattern[curr_session_cycle].on_time_ms)
-			{
-				wait_time_ms = MILLISECONDS_TO_TICKS(curr_beep_pattern[curr_session_cycle].on_time_ms - session_time_elapsed_in_cycle_ms);
-			}
-			else
-			{
-				// Turn beeper off if it is not already.
-				if (beeperBspActiveGet())
-				{
-					beeperBspActiveSet(false);
-				}
-				
-				uint16_t time_to_be_off = curr_beep_pattern[curr_session_cycle].on_time_ms +
-										  curr_beep_pattern[curr_session_cycle].off_time_ms;
-
-				if ((curr_beep_pattern[curr_session_cycle].off_time_ms == 0) ||
-					(session_time_elapsed_in_cycle_ms >= time_to_be_off))
-				{
-					// See if there is a next cycle or if the beep pattern is finished.
-					curr_session_cycle++;
-
-					if (curr_session_cycle < BeepPatternNumCycles(session_pattern))
-					{
-						if (!beeperBspActiveGet())
-						{
-							stopwatchZero(&beep_stopwatch);
-							beeperBspActiveSet(true);
-							
-							wait_time_ms = MILLISECONDS_TO_TICKS(curr_beep_pattern[curr_session_cycle].on_time_ms);
-						}
-					}
-					else
-					{
-						// Stop the beep pattern
-						Evt_t notif_evt_id = BeepPatternStop();
-
-						if (notif_evt_id != NO_EVENT)
-						{
-							event_signal(notif_evt_id);
-							signal_calling_task = false;
-						}
-					}
-				}
-				else
-				{
-					wait_time_ms = time_to_be_off - session_time_elapsed_in_cycle_ms;
-				}
-			}
-		}
-	}
-    task_close();
+        BeepStateEngine = ForceStopBeeping;
+    }
+    
+    g_NewBeepPattern = pattern;
 }
 
 //-------------------------------
-// Function: BeepPatternStart
-//
-// Description: 
-//
-// NOTE: Could put sem locks between here and the task that carries out the action. But,
-// NOTE: there should never be conflicts given the current definition of the system.
-//
+// Function: IsBeepEnabled
+// Description: Get the status of the DIP switch for the Beep
+// Returns: "true" if the Beeps should be making obnoxious noise or
+//      "false" to operate in silence.
 //-------------------------------
-static Evt_t BeepPatternStart(BeepPattern_t pattern)
+
+bool IsBeepEnabled(void)
 {
-	session_pattern = pattern;
-
-	if (os_running())
-	{
-		return os_event_start_beep_seq_id;
-	}
-	else
-	{
-		return NO_EVENT;
-	}
+    if (Does_Main_Allow_Beeping() == false)
+        return false;
+    
+    return (IsBeepFeatureEnable());
 }
-
-//-------------------------------
-// Function: BeepPatternStop
-//
-// Description: 
-//
-//-------------------------------
-static Evt_t BeepPatternStop(void)
-{
-	session_pattern = BEEPER_PATTERN_EOL;
-	curr_session_pattern = BEEPER_PATTERN_EOL;
-	beeper_is_running = false;
-	stopwatchStop(&beep_stopwatch);
-	
-	// Want to make sure that the beeper is off after releasing control of the beeper.
-	if (beeperBspActiveGet())
-	{
-		beeperBspActiveSet(false);
-	}
-
-	if (signal_calling_task)
-	{
-		return os_event_beep_seq_complete;
-	}
-	else
-	{
-		return NO_EVENT;
-	}
-}
-
-//-------------------------------
-// Function: CanRunBeepPattern
-//
-// Description: 
-//
-//-------------------------------
-static bool CanRunBeepPattern(BeepPattern_t pattern)
-{
-	if (!beeper_is_running || (beep_pattern_prio[(int)pattern] > beep_pattern_prio[(int)session_pattern]))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-//-------------------------------
-// Function: 
-//
-// Description: 
-//
-// NOTE: Would rather use a pointer to Beep_t arrays, but CCS does not support that type of construct.
-//
-//-------------------------------
-static uint8_t BeepPatternNumCycles(BeepPattern_t pattern)
-{
-	uint8_t ret_val;
-
-	switch (pattern)
-	{
-		case BEEPER_PATTERN_USER_BUTTON_SHORT_PRESS:
-			ret_val = NUM_ELEMENTS_IN_ARR(beep_pattern_function);
-			break;
-		
-		case BEEPER_PATTERN_USER_BUTTON_LONG_PRESS:
-			ret_val = NUM_ELEMENTS_IN_ARR(beep_pattern_long_press);
-			break;
-
-		case BEEPER_PATTERN_EEPROM_NOT_INIT_ON_BOOT:
-			ret_val = NUM_ELEMENTS_IN_ARR(beep_pattern_eeprom_not_init_on_boot);
-			break;
-
-        case ANNOUNCE_POWER_ON:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnouncePowerOnOffFeature);
-            break;
-            
-        case ANNOUNCE_BLUETOOTH:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceBluetoothFeature);
-            break;
-            
-        case ANNOUNCE_NEXT_FUNCTION:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceNextFunctionFeature);
-            break;
-            
-        case ANNOUNCE_NEXT_PROFILE:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceNextProfileFeature);
-            break;
-            
-        case BEEPER_PATTERN_MODE_ACTIVE:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceModeSwitchActive);
-            break;
-
-        case ANNOUNCE_RNET_SEATING_ACTIVE:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceRNetFeature);
-            break;
-            
-        case ANNOUNCE_BEEPER_RNET_SLEEP:
-            ret_val = NUM_ELEMENTS_IN_ARR(g_AnnounceRNet_Sleep_Feature);
-            break;
-            
-		default:
-			ASSERT(pattern == BEEPER_PATTERN_EEPROM_NOT_INIT_ON_BOOT);
-			ret_val = 0;
-			break;
-	}
-
-	return ret_val;
-}
-
-//-------------------------------
-// Function: 
-//
-// Description: 
-//
-// NOTE: Would rather use a pointer to Beep_t arrays, but CCS does not support that type of construct.
-//
-//-------------------------------
-static Beep_t *BeepPatternPatternGet(BeepPattern_t pattern)
-{
-	Beep_t *ret_val;
-
-	switch (pattern)
-	{
-		case BEEPER_PATTERN_USER_BUTTON_SHORT_PRESS:
-			ret_val = (Beep_t *)beep_pattern_function;
-			break;
-
-		case BEEPER_PATTERN_USER_BUTTON_LONG_PRESS:
-			ret_val = (Beep_t *)beep_pattern_long_press;
-			break;
-
-		case BEEPER_PATTERN_EEPROM_NOT_INIT_ON_BOOT:
-			ret_val = (Beep_t *)beep_pattern_eeprom_not_init_on_boot;
-			break;
-
-        case ANNOUNCE_POWER_ON:
-            ret_val = (Beep_t*) g_AnnouncePowerOnOffFeature;
-            break;
-            
-        case ANNOUNCE_BLUETOOTH:
-            ret_val = (Beep_t*) g_AnnounceBluetoothFeature;
-            break;
-            
-        case ANNOUNCE_NEXT_FUNCTION:
-            ret_val = (Beep_t*) g_AnnounceNextFunctionFeature;
-            break;
-            
-        case ANNOUNCE_NEXT_PROFILE:
-            ret_val = (Beep_t*) g_AnnounceNextProfileFeature;
-            break;
-			
-        case BEEPER_PATTERN_MODE_ACTIVE:
-            ret_val = (Beep_t*) g_AnnounceModeSwitchActive;
-            break;
-
-        case ANNOUNCE_RNET_SEATING_ACTIVE:
-            ret_val = (Beep_t*) g_AnnounceNextProfileFeature; // It's the same
-                        //.. they can't be active at the same time.
-            break;
-
-        case ANNOUNCE_BEEPER_RNET_SLEEP:
-            ret_val = (Beep_t*) g_AnnounceRNet_Sleep_Feature;
-            break;
-            
-		default:
-			ASSERT(pattern == BEEPER_PATTERN_EEPROM_NOT_INIT_ON_BOOT);
-
-			ret_val = (Beep_t *)beep_pattern_function;
-			break;
-	}
-
-	return ret_val;
-}
-
-//-------------------------------
-// Function: StartBeepPattern
-//
-// Description: Kicks off a beep sequence
-//
-//-------------------------------
-static void StartBeepPattern(void)
-{
-	beeper_is_running = true;
-	curr_session_pattern = session_pattern;
-	curr_session_cycle = 0;
-	stopwatchStart(&beep_stopwatch);
-	
-	beeperBspActiveSet(true);
-
-	curr_session_pattern = session_pattern;
-}
-
 
 // end of file.
 //-------------------------------------------------------------------------

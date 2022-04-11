@@ -41,6 +41,8 @@
 
 /* ******************************   Types   ******************************* */
 
+#ifdef OK_TO_USE_HHP_CODE
+
 typedef enum
 {
 	HA_HHP_CMD_PAD_ASSIGNMENT_GET = 0x30,
@@ -60,10 +62,7 @@ typedef enum
     HA_HHP_CMD_SAVE_PARAMETERS = 0x3E,
     HA_HHP_CMD_RESET_PARAMETERS = 0x3F,
     HA_HHP_CMD_DRIVE_OFFSET_GET = 0x40,
-    HA_HHP_CMD_DRIVE_OFFSET_SET = 0x41,
-    HA_HHP_CMD_ATTENDANT_SETTINGS_GET = 0x42,
-    HA_HHP_CMD_ATTENDANT_SETTINGS_SET = 0x43,
-    HA_HHP_CMD_ATTENDANT_CONTROL = 0x44
+    HA_HHP_CMD_DRIVE_OFFSET_SET = 0x41
 } HaHhpIfCmd_t;
 
 // Slave responses to commands from master.
@@ -130,15 +129,13 @@ static HeadArrayInputType_t TranslateInputTypeValToEnum(uint8_t input_type);
 static uint8_t CalcChecksum(uint8_t *packet, uint8_t len);
 static void CreateGetOffsetResponse (uint8_t *pkt_to_tx);
 static void CreateSetOffsetResponse (uint8_t *rxd_pkt, uint8_t *pkt_to_tx);
-static void CreateGetAttendantSettingsResponse (uint8_t *pkt_to_tx);
-static void CreateSetAttendantSettingsResponse (uint8_t *rxd_pkt, uint8_t *pkt_to_tx);
 
 /* *******************   Public Function Definitions   ******************** */
 
 //-------------------------------
 // Function: haHhpApp_Init
 //
-// Description: Initializes this module.
+// Description: Intializes this module.
 //
 //-------------------------------
 void haHhpApp_Init(void)
@@ -159,9 +156,6 @@ void haHhpApp_Init(void)
 static void HaHhpInterfaceHandlingTask(void)
 {
     task_open();
-    
-    g_AttendantActiveHeartBeatCounter = 0;
-    
 	while (1)
     {
 		if (haHhpBsp_MasterRtsAsserted())
@@ -507,42 +501,6 @@ static void ProcessRxdPacket(uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
 				CreateSetOffsetResponse (rxd_pkt, pkt_to_tx);
                 break;
 
-            case HA_HHP_CMD_ATTENDANT_SETTINGS_GET:
-                //Receive: <LEN>< ATTENDANT_SETTINGS_GET_CMD><CHKSUM>
-                //Respond: <LEN><SETUP><TIMEOUT><CHKSUM>
-                //Where: 	<ATTENDANT_SETTINGS_GET_CMD> = 0x42
-                //	<SETUP>
-                //      DO: 0 = Attendant control disabled, 1 = Attendant control enabled.
-                //      D1: 0 = Proportional Control, 1 = Digital Control
-                //		D2: 0 = Use as Assist to Patient, 1 = Override Patent demands
-                //		D3: 0 = Portrait orientation, 1 = Landscape.
-                //	<TIMEOUT>
-                //		0 ? 127 seconds, 0 = No timeout
-                CreateGetAttendantSettingsResponse (pkt_to_tx);
-                break;
-                
-            case HA_HHP_CMD_ATTENDANT_SETTINGS_SET:
-                //<LEN>< ATTENDANT_SETTINGS_SET_CMD ><SETUP><TIMEOUT><CHKSUM>
-                //<LEN><ACK/NACK><CHKSUM>
-                //Where: 	<ATTENDANT_SETTINGS_SET_CMD> = 0x43
-                //      See ?GET? command for parameters definitions
-                CreateSetAttendantSettingsResponse (rxd_pkt, pkt_to_tx);
-                break;
-                
-            case HA_HHP_CMD_ATTENDANT_CONTROL:
-                //<LEN><ATTENDANT_CONTROL_CMD><ACTIVE><SPEED><DIRECTION><HEARTBEAT><CHKSUM>
-                //<LEN><ACK/NACK><CHKSUM>
-                //Where: 	<ATTENDANT_CONTROL_CMD> = 0x46
-                //	<ACTIVE> is 1 if Attendant Control is active in ASL165 Display.
-                //	<SPEED> is a -100 (reverse) to 100 (forward) value where 0 is Neutral.
-                //	<DIRECTION> is a -100 (left) to 100 (right) value where 0 is Neutral.
-                //	<HEARTBEAT> is a Heart Beat value incremented on each transmission.
-                g_AttendantActive = rxd_pkt[2];
-                //g_AttendantSpeedDemand = (int8_t) rxd_pkt[3];
-                g_AttendantDirectionDemand = (int8_t) rxd_pkt[4];
-                g_AttendantActiveHeartBeatCounter = 0;  // Clear the keep alive counter;
-                break;
-                
 			default:
                 myData[0] = *rxd_pkt;
                 myData[1] = *(rxd_pkt+1);
@@ -888,49 +846,23 @@ static void BuildEnabledFeaturesResponsePacket(uint8_t *pkt_to_tx)
 // Function: HandleEnabledFeaturesSet
 //
 // Description: Digests and responds to a received HA_HHP_CMD_ENABLED_FEATURES_SET command.
-//  This grew to include changing the Minimum Speed when Enabling/Disabling RNet
-//  feature.
 //
 //-------------------------------
 static void HandleEnabledFeaturesSet(uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
 {
     uint8_t item1, item2;
-    uint8_t existingFeatureSet_1, existingFeatureSet_2;
-    uint8_t myMask;
     
     item1 = rxd_pkt[2];
     item2 = rxd_pkt[4];
     
-    existingFeatureSet_1 = eeprom8bitGet(EEPROM_STORED_ITEM_ENABLED_FEATURES);
-
 	eeprom8bitSet(EEPROM_STORED_ITEM_ENABLED_FEATURES, item1);
 	eeprom16bitSet(EEPROM_STORED_ITEM_USER_BTN_LONG_PRESS_ACT_TIME, (uint16_t)rxd_pkt[3] * (uint16_t)100);
 	eeprom8bitSet(EEPROM_STORED_ITEM_ENABLED_FEATURES_2, item2);
-    
-    // Check to see if the RNet Enabled bit has flipped. If so, we need to do something.
-    if ((existingFeatureSet_1 & FUNC_FEATURE_RNET_SEATING_MASK) != (item1 & FUNC_FEATURE_RNET_SEATING_MASK))
-    {
-        // First set RNET SLEEP to OFF (disabled)
-        existingFeatureSet_2 = eeprom8bitGet (EEPROM_STORED_ITEM_ENABLED_FEATURES_2);
-        existingFeatureSet_2 &= ~FUNC_FEATURE2_RNET_SLEEP_BIT_MASK;
-        eeprom8bitSet (EEPROM_STORED_ITEM_ENABLED_FEATURES_2, existingFeatureSet_2);
 
-        // If the bit is set then RNet has become enabled.
-        if (item1 & FUNC_FEATURE_RNET_SEATING_MASK)
-        {
-    		eeprom16bitSet(EEPROM_STORED_ITEM_MM_NEUTRAL_DAC_SETTING, DEFAULT_DAC_SETTING_RNET);    // +2 Veer Adjust
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_CENTER_PAD_MINIMUM_DRIVE_OFFSET, 25);
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_LEFT_PAD_MINIMUM_DRIVE_OFFSET, 25);
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_RIGHT_PAD_MINIMUM_DRIVE_OFFSET, 25);
-        }
-        else
-        {
-    		eeprom16bitSet(EEPROM_STORED_ITEM_MM_NEUTRAL_DAC_SETTING, DEFAULT_DAC_SETTING_LINX);    // -2 Veer Adjust
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_CENTER_PAD_MINIMUM_DRIVE_OFFSET, 20);
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_LEFT_PAD_MINIMUM_DRIVE_OFFSET, 20);
-            eeprom8bitSet (EEPROM_STORED_ITEM_MM_RIGHT_PAD_MINIMUM_DRIVE_OFFSET, 20);
-        }
-    }
+//	eeprom8bitSet(EEPROM_STORED_ITEM_ENABLED_FEATURES, rxd_pkt[2]);
+//	eeprom16bitSet(EEPROM_STORED_ITEM_USER_BTN_LONG_PRESS_ACT_TIME, (uint16_t)rxd_pkt[3] * (uint16_t)100);
+//	eeprom8bitSet(EEPROM_STORED_ITEM_ENABLED_FEATURES_2, rxd_pkt[4]);
+    
 }
 
 //-------------------------------
@@ -971,8 +903,6 @@ static void BuildHeartBeatResponsePacket(uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
     
 	pkt_to_tx[0] = 5;
 	pkt_to_tx[1] = rxd_pkt[2];
-    g_CurrentHeartBeat = rxd_pkt[2];        // Store for use to determine if Display is still 
-                                            // connected. Specifically for Attendant control.
     currentFeature = eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
 	pkt_to_tx[2] = ++currentFeature;    // Make it base 1
 
@@ -1024,7 +954,7 @@ static void Buid_DAC_Get_Response(uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
 static void Handle_DAC_SetCommand(uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
 {
     TypeAccess16Bit_t t_val;
-    uint16_t my16Val, DAC_Constant, DAC_Range;
+    int16_t my16Val, DAC_Constant, DAC_Range;
 
 	t_val.bytes[0] = rxd_pkt[3];
 	t_val.bytes[1] = rxd_pkt[2];
@@ -1060,6 +990,7 @@ static void CreateGetOffsetResponse (uint8_t *pkt_to_tx)
     pkt_to_tx[1] = eeprom8bitGet(EEPROM_STORED_ITEM_MM_CENTER_PAD_MINIMUM_DRIVE_OFFSET);
     pkt_to_tx[2] = eeprom8bitGet(EEPROM_STORED_ITEM_MM_LEFT_PAD_MINIMUM_DRIVE_OFFSET);
     pkt_to_tx[3] = eeprom8bitGet(EEPROM_STORED_ITEM_MM_RIGHT_PAD_MINIMUM_DRIVE_OFFSET);
+   
 }
 
 //-------------------------------
@@ -1090,37 +1021,6 @@ static void CreateSetOffsetResponse (uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
     pkt_to_tx[0] = 3;   // Set msg length to 3 for NAK or ACK.
 }
 
-//-------------------------------
-// Function: CreateGetAttendantSettingsResponse
-//
-// Description: This function creates the message to send back
-//      the Attendant Settings
-//
-//-------------------------------
-static void CreateGetAttendantSettingsResponse (uint8_t *pkt_to_tx)
-{
-	pkt_to_tx[0] = 4;
-    // Get the Attendant Settings
-    pkt_to_tx[1] = eeprom8bitGet(EEPROMP_STORED_ITEM_MM_ATTENDANT_SETTINGS);
-    // Get the Attendant Timeout Setting
-    pkt_to_tx[2] = eeprom8bitGet(EEPROMP_STORED_ITEM_MM_ATTENDANT_TIMEOUT);
-}
-
-//-------------------------------
-// Function: CreateSetAttendantSettingsResponse
-//
-// Description: This function gets the settings from the received
-//      message and stores the Attendant Settings and timeout
-//      in the EEPROM.
-//
-//-------------------------------
-static void CreateSetAttendantSettingsResponse (uint8_t *rxd_pkt, uint8_t *pkt_to_tx)
-{
-    eeprom8bitSet(EEPROMP_STORED_ITEM_MM_ATTENDANT_SETTINGS, rxd_pkt[2]);
-    eeprom8bitSet(EEPROMP_STORED_ITEM_MM_ATTENDANT_TIMEOUT, rxd_pkt[3]);
-    pkt_to_tx[1] = HA_HHP_RESP_ACK;
-    pkt_to_tx[0] = 3;   // Set msg length to 3 for NAK or ACK.
-}
 //-------------------------------
 // Function: TranslateInputToOutputMapValFromEnum
 //
@@ -1215,6 +1115,8 @@ static uint8_t CalcChecksum(uint8_t *packet, uint8_t len)
 
 	return checksum;
 }
+
+#endif // #ifdef OK_TO_USE_HHP_CODE
 
 // end of file.
 //-------------------------------------------------------------------------

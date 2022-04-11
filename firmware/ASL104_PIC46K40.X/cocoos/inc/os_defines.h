@@ -62,7 +62,7 @@ extern "C" {
 
 /** Max number of used events
 * @remarks Must be defined. @n Allowed range: 0-254. Value must not be exceeded */
-#define N_EVENTS            10
+#define N_EVENTS            20 // 10
 
 
 /** Round Robin scheduling

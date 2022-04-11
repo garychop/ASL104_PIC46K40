@@ -45,7 +45,11 @@ void bspInitCore(void)
     INTCONbits.IPEN = 1; // Enable priorities on interrupts.
     INTCONbits.PEIE_GIEL = 1; // Enable peripheral interrupts
 #else
+    // The following are required to disable the USB operations
+    // so RC4 and RC5 can be used as inputs.
 	UCONbits.USBEN = 0; // Disable USB operations
+    UCFGbits.UTRDIS = 1;    // This Disables the ON-Board Transceiver interface
+    
     INTCON2bits.nRBPU = 0; // Disable pull ups on all Port B pins
 	
 	SysTickTimerInit();

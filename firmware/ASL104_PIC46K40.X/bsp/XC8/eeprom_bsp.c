@@ -266,7 +266,8 @@ static void readIntoBuffer(uint8_t start_address, uint8_t num_bytes_to_read, uin
 		// There's no mention of needing delay between setting up for a read and actually reading
 		// for PIC18(L)F46K40 MCUs.
 		buffer[i] = NVMDAT;
-#else
+#endif 
+#ifdef USE_OLD_CODE
 		EEADR = (start_address + i);
 
 		// Point to data section of EEPROM and enable EEPROM

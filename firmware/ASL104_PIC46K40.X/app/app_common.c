@@ -32,7 +32,7 @@
 
 // from local
 #include "app_common.h"
-
+#include "inc/beeper.h"
 
 /* ******************************   Macros   ****************************** */
 
@@ -47,10 +47,6 @@
 
 static volatile bool device_is_active;
 //static volatile bool device_in_calibration;
-static bool g_BT_SequnceActive;
-
-/* ***********************   Global Variables   *********************** */
-
 
 /* ***********************   Function Prototypes   ************************ */
 
@@ -67,6 +63,10 @@ inline static void ManageEepromDataFlush(void);
 //-------------------------------
 void AppCommonInit(void)
 {
+    device_is_active = false;
+    
+    //device_in_calibration = false;
+
     (void)task_create(SystemSupervisorTask , NULL, SYSTEM_SUPERVISOR_TASK_PRIO, NULL, 0, 0);
 }
 
@@ -78,41 +78,34 @@ void AppCommonInit(void)
 //-------------------------------
 bool appCommonFeatureIsEnabled(FunctionalFeature_t feature)
 {
-#if 0
-	uint8_t feature_mask;
+//	uint8_t feature_mask;
+//
+//	switch (feature)
+//	{
+//		case FUNC_FEATURE_POWER_ON_OFF:
+//			feature_mask = FUNC_FEATURE_POWER_ON_OFF_BIT_MASK;
+//			break;
+//
+//		case FUNC_FEATURE_OUT_CTRL_TO_BT_MODULE:
+//			feature_mask = FUNC_FEATURE_OUT_CTRL_TO_BT_MODULE_BIT_MASK;
+//			break;
+//
+//		case FUNC_FEATURE_OUT_NEXT_FUNCTION:
+//			feature_mask = FUNC_FEATURE_NEXT_FUNCTION_BIT_MASK;
+//			break;
+//
+//        case FUNC_FEATURE_RNET_SEATING:
+//            feature_mask = FUNC_FEATURE_RNET_SEATING_MASK;
+//            break;
+//
+//		case FUNC_FEATURE_OUT_NEXT_PROFILE:
+//		default:
+//			feature_mask = FUNC_FEATURE_NEXT_PROFILE_BIT_MASK;
+//			break;
+//	}
 
-	switch (feature)
-	{
-		case FUNC_FEATURE_POWER_ON_OFF:
-			feature_mask = FUNC_FEATURE_POWER_ON_OFF_BIT_MASK;
-			break;
-
-		case FUNC_FEATURE_OUT_CTRL_TO_BT_MODULE:
-			feature_mask = FUNC_FEATURE_OUT_CTRL_TO_BT_MODULE_BIT_MASK;
-			break;
-
-		case FUNC_FEATURE_OUT_NEXT_FUNCTION:
-			feature_mask = FUNC_FEATURE_NEXT_FUNCTION_BIT_MASK;
-			break;
-
-        case FUNC_FEATURE_RNET_SEATING:
-            feature_mask = FUNC_FEATURE_RNET_SEATING_MASK;
-            break;
-
-        // The following feature is set the 2nd feature byte, so we are making an "exception" to the mask setting.
-        case FUNC_FEATURE2_RNET_SLEEP:
-            return ((eeprom8bitGet (EEPROM_STORED_ITEM_ENABLED_FEATURES_2) & FUNC_FEATURE2_RNET_SLEEP_BIT_MASK) == FUNC_FEATURE2_RNET_SLEEP_BIT_MASK);
-            break;
-            
-		case FUNC_FEATURE_OUT_NEXT_PROFILE:
-		default:
-			feature_mask = FUNC_FEATURE_NEXT_PROFILE_BIT_MASK;
-			break;
-	}
-
-	return ((eeprom8bitGet(EEPROM_STORED_ITEM_ENABLED_FEATURES) & feature_mask) > 0);
-#endif
-    return (false);
+//	return ((eeprom8bitGet(EEPROM_STORED_ITEM_ENABLED_FEATURES) & feature_mask) > 0);
+    return 0;
 }
 
 //-------------------------------
@@ -123,9 +116,22 @@ bool appCommonFeatureIsEnabled(FunctionalFeature_t feature)
 //-------------------------------
 bool appCommonSoundEnabled(void)
 {
-//	return ((eeprom8bitGet(EEPROM_STORED_ITEM_ENABLED_FEATURES) & FUNC_FEATURE_SOUND_ENABLED_BIT_MASK) > 0);
-    return true;
+    return IsBeepEnabled();
 }
+
+//-------------------------------
+// Function: appCommonIsPowerUpInIdleEnabled
+//
+// Description: Evaluates the Power Up In Idle feature.
+// Returns: true if Power Up In Idle feature is enabled else false.
+//-------------------------------
+#ifdef ASL110
+bool appCommonIsPowerUpInIdleEnabled (void)
+{
+	//return ((eeprom8bitGet(EEPROM_STORED_ITEM_ENABLED_FEATURES) & FUNC_FEATURE_POWER_UP_IN_IDLE_BIT_MASK) > 0);
+    return false;
+}
+#endif
 
 //-------------------------------
 // Function: appCommonGetCurrentFeature
@@ -134,8 +140,8 @@ bool appCommonSoundEnabled(void)
 
 FunctionalFeature_t appCommonGetCurrentFeature(void)
 {
-//    return (FunctionalFeature_t)eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
-    return (FunctionalFeature_t) 0;
+    //return (FunctionalFeature_t)eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
+    return (FunctionalFeature_t)0;
 }
 
 //-------------------------------
@@ -146,8 +152,8 @@ FunctionalFeature_t appCommonGetCurrentFeature(void)
 //-------------------------------
 FunctionalFeature_t appCommonGetPreviousEnabledFeature(void)
 {
-#if 0
-	FunctionalFeature_t feature = (FunctionalFeature_t)eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
+    FunctionalFeature_t feature = FUNC_FEATURE_DRIVING;
+    
 	uint8_t numberFeaturesChecked;
 
     for (numberFeaturesChecked = 0; numberFeaturesChecked < FUNC_FEATURE_EOL; ++ numberFeaturesChecked)
@@ -163,10 +169,7 @@ FunctionalFeature_t appCommonGetPreviousEnabledFeature(void)
 			return feature;
 		}
 	}
-
-	return (FunctionalFeature_t)eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
-#endif
-    return (FunctionalFeature_t) 0;
+    return feature;
 }
 
 //-------------------------------
@@ -177,8 +180,7 @@ FunctionalFeature_t appCommonGetPreviousEnabledFeature(void)
 //-------------------------------
 FunctionalFeature_t appCommonGetNextFeature (void)
 {
-#if 0
-	FunctionalFeature_t next_feature = (FunctionalFeature_t)eepromEnumGet(EEPROM_STORED_ITEM_CURRENT_ACTIVE_FEATURE);
+	FunctionalFeature_t next_feature = FUNC_FEATURE_DRIVING;
 	uint8_t numberFeaturesChecked;
 
     for (numberFeaturesChecked = 0; numberFeaturesChecked < FUNC_FEATURE_EOL; ++ numberFeaturesChecked)
@@ -190,25 +192,75 @@ FunctionalFeature_t appCommonGetNextFeature (void)
 			return next_feature;
 		}
 	}
-#endif
+
 	return FUNC_FEATURE_EOL;
 }
 
 //-------------------------------
-// This sets the system var that indicates the Bluetooth module is
-// being Enabled or Disabled and commands to the driver demands should be
-// inhibit.
+// Function: AppCommonForceActiveState
+//
+// Description: Sets the 'active/enabled' state of the system.
+//
 //-------------------------------
-
-void AppCommonSetBTSequenceActive (bool active)   // true to indicate BT control is active.
+void AppCommonForceActiveState (bool is_active)
 {
-    g_BT_SequnceActive = active;
+    device_is_active = is_active;
 }
 
-bool AppCommonGetBTSequenceActive (void)
+//-------------------------------
+// Function: AppCommonDeviceActiveSet
+//
+// Description: Sets the 'active/enabled' state of the system.
+//		When inactive, all outputs are shutoff (sound, control, etc).
+//      If going from Inactive to Active, the Neutral Test is performed.
+//-------------------------------
+void AppCommonDeviceActiveSet(bool is_active)
 {
-    return (g_BT_SequnceActive);
+    // Determine if we need to check for Neutral.
+//    if (device_is_active == false)      // We are NOT active
+//    {
+//        if (is_active)                  // We are going to ACTIVE
+//            SetNeedForNeutralTest ();   // Tell the Head Array task to perform a Neutral Test
+//    }
+	device_is_active = is_active;
+
 }
+
+//-------------------------------
+// Function: AppCommonDeviceActiveGet
+//
+// Description: Gets the 'active/enabled' state of the system.
+//		When inactive, all outputs are shutoff (sound, control, etc).
+//
+//-------------------------------
+bool AppCommonDeviceActiveGet(void)
+{
+	return device_is_active;
+}
+
+//-------------------------------
+// Function: AppCommonCalibrationActiveSet
+//
+// Description: Sets the 'calibration/normal' state of the system.
+//		When true, all outputs are shutoff (sound, control, etc).
+//
+//-------------------------------
+//void AppCommonCalibrationActiveSet(bool put_into_calibration)
+//{
+//	//device_in_calibration = put_into_calibration;
+//}
+
+//-------------------------------
+// Function: AppCommonCalibrationActiveGet
+//
+// Description: Gets the 'calibration/normal' state of the system.
+//		When true, all outputs are shutoff (sound, control, etc).
+//
+//-------------------------------
+//bool AppCommonCalibrationActiveGet(void)
+//{
+//	//return device_in_calibration;
+//}
 
 /* ********************   Private Function Definitions   ****************** */
 
@@ -225,9 +277,46 @@ static void SystemSupervisorTask(void)
 	{
 		task_wait(MILLISECONDS_TO_TICKS(SYS_SUPERVISOR_TASK_EXECUTION_RATE_ms));
 		
+		//ManageEepromDataFlush();
 	}
 	task_close();
 }
+
+//-------------------------------
+// Function: ManageEepromDataFlush
+//
+// Description: Monitor EEPROM and flush changes, stored in RAM, to EEPROM after waiting for a user(s) to
+// 		finish updating all values of interest to them to help manage wear on the EEPROM.
+//
+//-------------------------------
+#ifdef ASL110
+
+inline static void ManageEepromDataFlush(void)
+{
+// This is the time to wait for new updates to persistent data (stored in RAM) before flushing to the EEPROM.
+// This is to reduce wear on EEPROM.
+#define TIME_TO_WAIT_BEFORE_EEPROM_FLUSH_ms ((uint32_t)10 * (uint32_t)1000)
+#define TIME_TO_WAIT_BEFORE_EEPROM_FLUSH_PERIODS (uint16_t)(TIME_TO_WAIT_BEFORE_EEPROM_FLUSH_ms / (uint32_t)SYS_SUPERVISOR_TASK_EXECUTION_RATE_ms)
+
+	static uint16_t num_periods_before_eeprom_flush = 0;
+	static uint8_t num_times_any_item_has_updated = 0;
+
+	if (num_times_any_item_has_updated != eepromAppNumTimesAnyDataHasBeenUpdated())
+	{
+		num_times_any_item_has_updated = eepromAppNumTimesAnyDataHasBeenUpdated();
+		num_periods_before_eeprom_flush = TIME_TO_WAIT_BEFORE_EEPROM_FLUSH_PERIODS;
+	}
+	else if (num_periods_before_eeprom_flush > 0)
+	{
+		num_periods_before_eeprom_flush--;
+
+		if (num_periods_before_eeprom_flush == 0)
+		{
+			eepromFlush(false);
+		}
+	}
+}
+#endif // #ifdef ASL110
 
 // end of file.
 //-------------------------------------------------------------------------
