@@ -60,19 +60,27 @@ void SW6_Init (void);
 
 void USER_BTN_INIT()
 {
+#ifdef DEBUG
 //    TRISBbits.TRISB0 = GPIO_BIT_INPUT;  // This must be 
-    //ANSELBbits.ANSELB1 = 0;
+    ANSELBbits.ANSELB0 = 0;
+#else
+    ANSELBbits.ANSELB7 = 0;
+#endif
 }
 void MODE_BTN_INIT()
 {
-//    TRISCbits.TRISC5 = GPIO_BIT_INPUT;
-//    //ANSELCbits.ANSELC5 = 0;
+#ifdef DEBUG
+    ANSELBbits.ANSELB0 = 0;
+#else
+    ANSELBbits.ANSELB0 = 0;
+#endif
 }
 
 void BT_LED_INPUT_INIT()
 {
     // RC5 is the Bluetooth LED input.
-    // This pin, by default, is set to input
+    TRISCbits.TRISC5 = GPIO_BIT_INPUT;
+    ANSELCbits.ANSELC5 = 0;
 }
 
 //-------------------------------

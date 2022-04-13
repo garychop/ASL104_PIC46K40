@@ -45,9 +45,13 @@
 void headArrayBspInit(void)
 {
     TRISBbits.TRISB1 = GPIO_BIT_INPUT;      // D1 Pad
+    ANSELBbits.ANSELB1 = 0;
     TRISBbits.TRISB2 = GPIO_BIT_INPUT;      // D2 Pad
+    ANSELBbits.ANSELB2 = 0;
     TRISBbits.TRISB3 = GPIO_BIT_INPUT;      // D3 Pad
+    ANSELBbits.ANSELB3 = 0;
     TRISBbits.TRISB4 = GPIO_BIT_INPUT;      // D4 Pad
+    ANSELBbits.ANSELB4 = 0;
 }
 
 //-------------------------------
