@@ -39,10 +39,10 @@
 // of the ports when the RELEASE build is performed.
 
 #ifdef DEBUG
-//#define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)
-//#define USER_BTN_IS_ACTIVE()    (false)
-#define MODE_BTN_IS_ACTIVE()	(false)
-#define USER_BTN_IS_ACTIVE()    (PORTBbits.RB0 == GPIO_LOW)
+#define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)
+#define USER_BTN_IS_ACTIVE()    (false)
+//#define MODE_BTN_IS_ACTIVE()	(false)
+//#define USER_BTN_IS_ACTIVE()    (PORTBbits.RB0 == GPIO_LOW)
 #define BT_LED_IS_ACTIVE()      (PORTCbits.RC5 == GPIO_LOW)
 #else
 #define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)
@@ -144,7 +144,8 @@ bool BT_LED_IsActive(void)
 void SW1_Init (void)
 {
     // This pin is always an Input. The following code will not compile.
-    //TRISDbits.TRISD2 = GPIO_BIT_INPUT;
+    TRISDbits.TRISD2 = GPIO_BIT_INPUT;
+    ANSELDbits.ANSELD2 = 0;     // Disable Analog to allow digital input to operate.
 }
 
 bool Is_SW1_ON (void)
@@ -157,7 +158,8 @@ bool Is_SW1_ON (void)
 void SW6_Init()
 {
     // This pin is always an Input. The following code will not compile.
-    //TRISDbits.TRISD3 = GPIO_BIT_INPUT;
+    TRISDbits.TRISD3 = GPIO_BIT_INPUT;
+    ANSELDbits.ANSELD3 = 0;     // Disable Analog to allow digital input to operate.
 }
 
 bool Is_SW6_ON(void)
@@ -170,7 +172,8 @@ bool Is_SW6_ON(void)
 void SW3_Init (void)
 {
     // This pin is always an Input. The following code will not compile.
-    //TRISCbits.TRISC4 = GPIO_BIT_INPUT;
+    TRISCbits.TRISC4 = GPIO_BIT_INPUT;
+    ANSELCbits.ANSELC4 = 0;     // Disable Analog to allow digital input to operate.
 }
 
 bool Is_SW3_ON (void)

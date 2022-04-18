@@ -50,6 +50,7 @@ struct
 {
     bool m_CurrentPadStatus;
     bool m_PreviousPadStatus;
+    uint8_t m_DebounceCount;
     GenOutCtrlId_t m_LED_ID;
 } g_PadInfo[HEAD_ARRAY_SENSOR_EOL];
 
@@ -84,6 +85,7 @@ void headArrayinit(void)
 	{
         g_PadInfo[i].m_CurrentPadStatus = false;
         g_PadInfo[i].m_PreviousPadStatus = false;
+        g_PadInfo[i].m_DebounceCount = 0;
 	}
     g_PadInfo[HEAD_ARRAY_SENSOR_LEFT].m_LED_ID = GEN_OUT_CTRL_ID_LEFT_PAD_LED;
     g_PadInfo[HEAD_ARRAY_SENSOR_RIGHT].m_LED_ID = GEN_OUT_CTRL_ID_RIGHT_PAD_LED;
@@ -108,7 +110,7 @@ void headArrayinit(void)
 //------------------------------------------------------------------------------
 bool headArrayDigitalInputValue(HeadArraySensor_t sensor)
 {
-	return g_PadInfo[sensor].m_CurrentPadStatus;
+	return g_PadInfo[sensor].m_PreviousPadStatus;
 }
 
 //------------------------------------------------------------------------------
@@ -136,10 +138,9 @@ bool headArrayPadIsConnected(HeadArraySensor_t sensor)
 static void HeadArrayInputControlTask(void)
 {
     task_open();
-//	void (*myState)(void);
     
-	bool outputs_are_off = false;
-	StopWatch_t neutral_sw;
+	//bool outputs_are_off = false;
+	//StopWatch_t neutral_sw;
 
 	while (1)
 	{
@@ -170,17 +171,29 @@ static void HeadArrayInputControlTask(void)
         {
             if (g_PadInfo[sensor_id].m_CurrentPadStatus != g_PadInfo[sensor_id].m_PreviousPadStatus)
             {
-                if (g_PadInfo[sensor_id].m_CurrentPadStatus)
-                {
-                    GenOutCtrlBsp_SetActive(g_PadInfo[sensor_id].m_LED_ID);
-                    beeperBeep (BEEPER_PATTERN_PAD_ACTIVE);
-                }
-                else
-                {
-                    GenOutCtrlBsp_SetInactive(g_PadInfo[sensor_id].m_LED_ID);
-                }
+                g_PadInfo[sensor_id].m_DebounceCount = 0;
                 g_PadInfo[sensor_id].m_PreviousPadStatus = g_PadInfo[sensor_id].m_CurrentPadStatus;
-            }            
+            } // The old pad value and new pad value are the same.
+            else
+            {
+                ++g_PadInfo[sensor_id].m_DebounceCount;
+                if (g_PadInfo[sensor_id].m_DebounceCount == 3)
+                {
+                    if (g_PadInfo[sensor_id].m_CurrentPadStatus)
+                    {
+                        GenOutCtrlBsp_SetActive(g_PadInfo[sensor_id].m_LED_ID);
+                        beeperBeep (BEEPER_PATTERN_PAD_ACTIVE);
+                    }
+                    else
+                    {
+                        GenOutCtrlBsp_SetInactive(g_PadInfo[sensor_id].m_LED_ID);
+                    }
+                }
+                // Don't allow debounce counter to roll too far.
+                if (g_PadInfo[sensor_id].m_DebounceCount > 3)
+                    g_PadInfo[sensor_id].m_DebounceCount = 3;
+                g_PadInfo[sensor_id].m_PreviousPadStatus = g_PadInfo[sensor_id].m_CurrentPadStatus;
+            }
         }        
 
         task_wait(MILLISECONDS_TO_TICKS(HEAD_ARRAY_TASK_DELAY));

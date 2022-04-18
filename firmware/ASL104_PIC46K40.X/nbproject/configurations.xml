@@ -371,6 +371,11 @@
         <property key="user-pack-device-support" value=""/>
         <property key="wpo-lto" value="false"/>
       </XC8-config-global>
+      <pk4hybrid>
+        <property key="memories.programmemory.ranges" value="0-ffff"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/asl/ASL104_PIC46K40/firmware/ASL104_PIC46K40.X/debug/Debug/ASL104_PIC46K40_ptg"/>
+      </pk4hybrid>
     </conf>
     <conf name="Release" type="2">
       <toolsSet>
@@ -378,7 +383,7 @@
         <targetDevice>PIC18F46K40</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>noID</platformTool>
+        <platformTool>pk4hybrid</platformTool>
         <languageToolchain>XC8</languageToolchain>
         <languageToolchainVersion>2.35</languageToolchainVersion>
         <platform>3</platform>
