@@ -65,6 +65,7 @@ void USER_BTN_INIT()
     ANSELBbits.ANSELB0 = 0;
 #else
     ANSELBbits.ANSELB7 = 0;
+    WPUBbits.WPUB7 = 1;         // Enable the Weak Pull-up
 #endif
 }
 void MODE_BTN_INIT()
@@ -73,6 +74,7 @@ void MODE_BTN_INIT()
     ANSELBbits.ANSELB0 = 0;
 #else
     ANSELBbits.ANSELB0 = 0;
+    WPUBbits.WPUB0 = 1;         // Enable the Weak Pull-up
 #endif
 }
 

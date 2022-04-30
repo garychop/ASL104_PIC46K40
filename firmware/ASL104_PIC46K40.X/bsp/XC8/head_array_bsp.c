@@ -48,21 +48,25 @@ void headArrayBspInit(void)
     TRISBbits.TRISB1 = GPIO_BIT_INPUT;      // D1 Pad
     ANSELBbits.ANSELB1 = 0;                 // "0" disables Analog Input processing.
     //ODCONBbits.ODCB1 = 1 or 0;            // Doesn't matter on input
+    INLVLBbits.INLVLB1 = 0;                 // 0 = Set for TTL input, 1=Schmitt trigger
 
     // Setup BACK pad
     TRISBbits.TRISB2 = GPIO_BIT_INPUT;      // D2 Pad
-    ANSELBbits.ANSELB2 = 0;
+    ANSELBbits.ANSELB2 = 0;                 // "0" disables Analog Input processing.
     //ODCONBbits.ODCB2 = 1;
+    INLVLBbits.INLVLB2 = 0;                 // 0 = Set for TTL input, 1=Schmitt trigger
 
     // Setup RIGHT pad
     TRISBbits.TRISB3 = GPIO_BIT_INPUT;      // D3 Pad
-    ANSELBbits.ANSELB3 = 0;
+    ANSELBbits.ANSELB3 = 0;                 // "0" disables Analog Input processing.
     //ODCONBbits.ODCB3 = 1;
+    INLVLBbits.INLVLB3 = 0;                 // 0 = Set for TTL input, 1=Schmitt trigger
 
     // Setup CENTER (Forward) Pad
     TRISBbits.TRISB4 = GPIO_BIT_INPUT;      // D4 Pad
-    ANSELBbits.ANSELB4 = 0;
+    ANSELBbits.ANSELB4 = 0;                 // "0" disables Analog Input processing.
     //ODCONBbits.ODCB4 = 1;
+    INLVLBbits.INLVLB4 = 0;                 // 0 = Set for TTL input, 1=Schmitt trigger
 }
 
 //-------------------------------
