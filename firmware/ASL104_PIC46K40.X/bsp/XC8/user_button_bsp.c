@@ -63,6 +63,7 @@ void USER_BTN_INIT()
 #ifdef DEBUG
 //    TRISBbits.TRISB0 = GPIO_BIT_INPUT;  // This must be 
     ANSELBbits.ANSELB0 = 0;
+    WPUBbits.WPUB0 = 1;         // Enable the Weak Pull-up
 #else
     ANSELBbits.ANSELB7 = 0;
     WPUBbits.WPUB7 = 1;         // Enable the Weak Pull-up
@@ -72,6 +73,7 @@ void MODE_BTN_INIT()
 {
 #ifdef DEBUG
     ANSELBbits.ANSELB0 = 0;
+    WPUBbits.WPUB0 = 1;         // Enable the Weak Pull-up
 #else
     ANSELBbits.ANSELB0 = 0;
     WPUBbits.WPUB0 = 1;         // Enable the Weak Pull-up
@@ -83,6 +85,7 @@ void BT_LED_INPUT_INIT()
     // RC5 is the Bluetooth LED input.
     TRISCbits.TRISC5 = GPIO_BIT_INPUT;
     ANSELCbits.ANSELC5 = 0;
+    WPUCbits.WPUC5 = 1;         // Enable weak pull-up
 }
 
 //-------------------------------

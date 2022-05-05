@@ -189,7 +189,7 @@ bool GenOutCtrlBsp_Enable(GenOutCtrlId_t item_id)
             
         case GEN_OUT_CTRL_ID_REVERSE_DEMAND:        // Reverse Drive demand pin on 9-pin connector
             TRISDbits.TRISD5 = GPIO_BIT_OUTPUT;     // Set bit D5 for output control
-            LATDbits.LATD4 = GPIO_LOW;              // Set low for no reverse demand
+            LATDbits.LATD5 = GPIO_LOW;              // Set low for no reverse demand
             break;
             
         case GEN_OUT_CTRL_ID_LEFT_DEMAND:           // Left Drive demand pin on 9-pin connector

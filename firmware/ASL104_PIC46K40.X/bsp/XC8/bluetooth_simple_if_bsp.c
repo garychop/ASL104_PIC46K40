@@ -78,11 +78,11 @@
 //------------------------------------------------------------------------------
 bool BT_LEFT_PAD_IS_ACTIVE(void)
 {
-    return (LATEbits.LE1 == BT_PAD_MIRROR_ACTIVE_STATE);
+    return (LATDbits.LD1 == BT_PAD_MIRROR_ACTIVE_STATE);
 }
 void BT_LEFT_PAD_SET(bool active)
 {
-    LATEbits.LE1 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
+    LATDbits.LD1 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
 }
 void BT_LEFT_PAD_TOGGLE(void)
 {
@@ -90,18 +90,18 @@ void BT_LEFT_PAD_TOGGLE(void)
 }
 void BT_LEFT_PAD_INIT(void)
 {
-    TRISEbits.TRISE1 = GPIO_BIT_OUTPUT;
-    ANSELEbits.ANSELE1 = 0;
+    TRISDbits.TRISD1 = GPIO_BIT_OUTPUT;
+    ANSELDbits.ANSELD1 = 0;
     BT_LEFT_PAD_SET(false);
 }
 //------------------------------------------------------------------------------
 bool BT_RIGHT_PAD_IS_ACTIVE(void)
 {
-    return (LATCbits.LC1 == BT_PAD_MIRROR_ACTIVE_STATE);
+    return (LATDbits.LD7 == BT_PAD_MIRROR_ACTIVE_STATE);
 }
 void BT_RIGHT_PAD_SET(bool active)
 {
-    LATCbits.LC1 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
+    LATDbits.LD7 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
 }
 void BT_RIGHT_PAD_TOGGLE(void)
 {
@@ -109,19 +109,19 @@ void BT_RIGHT_PAD_TOGGLE(void)
 }
 void BT_RIGHT_PAD_INIT(void)
 {
-    TRISCbits.TRISC1 = GPIO_BIT_OUTPUT;
-    ANSELCbits.ANSELC1 = 0;
+    TRISDbits.TRISD7 = GPIO_BIT_OUTPUT;
+    ANSELDbits.ANSELD7 = 0;
     BT_RIGHT_PAD_SET(false);
 }
 
 //------------------------------------------------------------------------------
 bool BT_CTR_PAD_IS_ACTIVE(void )
 {
-    return (LATDbits.LD3 == BT_PAD_MIRROR_ACTIVE_STATE);
+    return (LATDbits.LD4 == BT_PAD_MIRROR_ACTIVE_STATE);
 }
 void BT_CTR_PAD_SET(bool active)
 {
-    LATDbits.LD3 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
+    LATDbits.LD4 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
 }
 void BT_CTR_PAD_TOGGLE(void)
 {
@@ -129,8 +129,8 @@ void BT_CTR_PAD_TOGGLE(void)
 }
 void BT_CTR_PAD_INIT(void)
 {
-    TRISDbits.TRISD3 = GPIO_BIT_OUTPUT;
-    ANSELDbits.ANSELD3 = 0;
+    TRISDbits.TRISD4 = GPIO_BIT_OUTPUT;
+    ANSELDbits.ANSELD4 = 0;
     BT_CTR_PAD_SET(false);
 }
 
