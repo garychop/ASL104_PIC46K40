@@ -112,7 +112,7 @@ const Beep_t g_BeepPatterns[MAX_BEEP_PATTERNS][MAX_BEEPS_PER_PATTERN] =
     },
     {//[3]
         {ANNOUNCE_POWER_ON, BEEP_ALWAYS},
-        {CHIRP, 50},
+        {50, 50}, // {CHIRP, 50},
         {END_BEEP,0}
     },
     {//[4]

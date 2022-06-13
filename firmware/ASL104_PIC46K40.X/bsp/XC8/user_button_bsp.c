@@ -39,10 +39,10 @@
 // of the ports when the RELEASE build is performed.
 
 #ifdef DEBUG
-#define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)
-#define USER_BTN_IS_ACTIVE()    (false)
-//#define MODE_BTN_IS_ACTIVE()	(false)
-//#define USER_BTN_IS_ACTIVE()    (PORTBbits.RB0 == GPIO_LOW)
+//#define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)
+//#define USER_BTN_IS_ACTIVE()    (false)
+#define MODE_BTN_IS_ACTIVE()	(false)
+#define USER_BTN_IS_ACTIVE()    (PORTBbits.RB0 == GPIO_LOW)
 #define BT_LED_IS_ACTIVE()      (PORTCbits.RC5 == GPIO_LOW)
 #else
 #define MODE_BTN_IS_ACTIVE()	(PORTBbits.RB0 == GPIO_LOW)

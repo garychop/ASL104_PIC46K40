@@ -134,6 +134,26 @@ void BT_CTR_PAD_INIT(void)
     BT_CTR_PAD_SET(false);
 }
 
+//------------------------------------------------------------------------------
+bool BT_REV_PAD_IS_ACTIVE(void)
+{
+    return (LATDbits.LD0 == BT_PAD_MIRROR_ACTIVE_STATE);
+}
+void BT_REV_PAD_SET(bool active)
+{
+    LATDbits.LD0 = active ? BT_PAD_MIRROR_ACTIVE_STATE : BT_PAD_MIRROR_INACTIVE_STATE;
+}
+void BT_REV_PAD_TOGGLE(void)
+{
+    BT_REV_PAD_SET(BT_REV_PAD_IS_ACTIVE() ? false : true);
+}
+void BT_REV_PAD_INIT(void)
+{
+    TRISDbits.TRISD0 = GPIO_BIT_OUTPUT;
+    ANSELDbits.ANSELD0 = 0;
+    BT_REV_PAD_SET(false);
+}
+
 //-------------------------------
 // Function: bluetoothSimpleIfBspInit
 //
@@ -145,7 +165,7 @@ void bluetoothSimpleIfBspInit(void)
 	BT_LEFT_PAD_INIT();
 	BT_RIGHT_PAD_INIT();
 	BT_CTR_PAD_INIT();
-//    BT_REV_PAD_INIT();
+    BT_REV_PAD_INIT();
 }
 
 //-------------------------------
@@ -185,7 +205,7 @@ void bluetoothSimpleIfBspPadMirrorStateSet(HeadArraySensor_t sensor_id, bool act
 			break;
 
         case HEAD_ARRAY_SENSOR_BACK:
-            //BT_REV_PAD_SET(active);
+            BT_REV_PAD_SET(active);
             break;
             
 		case HEAD_ARRAY_SENSOR_EOL:
@@ -217,7 +237,7 @@ bool bluetoothSimpleIfBspPadMirrorStateGet(HeadArraySensor_t sensor_id)
 			return BT_CTR_PAD_IS_ACTIVE();
 			
         case HEAD_ARRAY_SENSOR_BACK:
-            //return BT_REV_PAD_IS_ACTIVE();
+            return BT_REV_PAD_IS_ACTIVE();
             
 		case HEAD_ARRAY_SENSOR_EOL:
 		default:
