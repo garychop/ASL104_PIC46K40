@@ -129,6 +129,8 @@ static int g_VersionTable[][2] =
     {GEN_OUT_CTRL_ID_FORWARD_PAD_LED, LONG_PULSE},
     {GEN_OUT_CTRL_ID_MAX, OFF_PULSE},
     {GEN_OUT_CTRL_ID_LEFT_PAD_LED, SHORT_PULSE},
+    {GEN_OUT_CTRL_ID_MAX, OFF_PULSE},
+    {GEN_OUT_CTRL_ID_LEFT_PAD_LED, SHORT_PULSE},
     {GEN_OUT_CTRL_ID_MAX,0}
 };
 
@@ -160,6 +162,7 @@ static void OONAPU_State (void);
 //      Stay here until User Port switch becomes inactive then
 //          switch to Driving State.
 static void Driving_Setup_State (void);
+static void OON_Check_State (void);
 
 // State: Driving_State
 //      Stay here while reading Pads and send pad info to eFix Task.
@@ -169,6 +172,7 @@ static void Driving_Setup_State (void);
 static void Driving_State (void);
 //static void Driving_UserSwitchActivated (void);
 static void Driving_UserSwitch_State (void);
+static void UserSwitchSettingMode_State (void);
 static void Driving_Idle_State (void);
 static void ExitIdleState (void);
 
@@ -369,11 +373,26 @@ static void Driving_Setup_State (void)
     // When it does, go to the Driving State.
     if ((g_ExternalSwitchStatus & (USER_SWITCH | MODE_SWITCH)) == false)
     {
-        //beeperBeep (ANNOUNCE_POWER_ON);
+        beeperBeep (ANNOUNCE_POWER_ON);
         MainState = Driving_State;  // Set to Driving state
     }
 }
 
+//-------------------------------------------------------------------------
+// State: OON_Check_State
+// Description: Wait here until the Pad and Switches are inactive then
+//      proceed to driving.
+//-------------------------------------------------------------------------
+static void OON_Check_State (void)
+{
+    if (PadsInNeutralState())      // Yep, we are in neutral
+    {
+        if ((g_ExternalSwitchStatus & (USER_SWITCH | MODE_SWITCH)) == false)
+        {
+            MainState = Driving_State;  // Set to Driving state
+        }
+    }    
+}
 //-------------------------------------------------------------------------
 // State: Driving_State
 // Description: 
@@ -415,14 +434,24 @@ static void Driving_State (void)
         speedPercentage = 0;        // Force no drive demand.
         directionPercentage = 0;
 
-        // Turn off the Power LED
-        //GenOutCtrlApp_SetStateAll(GEN_OUT_POWER_LED_OFF);
-        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
-
-        beeperBeep (BEEPER_PATTERN_GOTO_IDLE);
-        // Setup delay time.
+        // If the Delay Pot is all the way CCW (0 delay), then
+        // simply drive the Mode Pin Output as long as the 
+        // switch is closed.
         g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
-        MainState = Driving_UserSwitch_State;
+        if (g_SwitchDelay == 0)
+        {
+            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT); // Assert the Mode Control line.
+            MainState = UserSwitchSettingMode_State;
+        }
+        else
+        {
+            // Turn off the Power LED
+            //GenOutCtrlApp_SetStateAll(GEN_OUT_POWER_LED_OFF);
+            GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
+            beeperBeep (BEEPER_PATTERN_GOTO_IDLE);
+            // Setup delay time.
+            MainState = Driving_UserSwitch_State;
+        }
     }
     if (g_ExternalSwitchStatus & MODE_SWITCH)
     {
@@ -503,6 +532,24 @@ static void Driving_UserSwitch_State(void)
 }
 
 //-------------------------------------------------------------------------
+// State: UserSwitchSettingMode_State
+//      We are asserting the Mode Output as long as the USER PORT switch
+//      input is active.
+//-------------------------------------------------------------------------
+static void UserSwitchSettingMode_State (void)
+{
+    if (g_ExternalSwitchStatus & USER_SWITCH)
+    {
+        // Nothing to do.
+    }
+    else // The Switch is released
+    {
+        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT); // de-assert the Mode Control line.
+        MainState = OON_Check_State;
+    }
+}
+
+//-------------------------------------------------------------------------
 // State: Driving_Idle_State
 //      Remain here until the User Switch goes active then we are going
 //      enable driving, but first, we are doing a OON test.
@@ -511,26 +558,8 @@ static void Driving_Idle_State (void)
 {
     if (g_ExternalSwitchStatus & USER_SWITCH)
     {
-        beeperBeep (BEEPER_PATTERN_RESUME_DRIVING);
-
-        // Turn on the Power LED
-        GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_POWER_LED);
-        // Setup delay time.
-        g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
-
-        MainState = ExitIdleState;
-        
-#ifdef EFIX
-// I think this applies to efix only        
-//        if (Is_SW3_ON())
-//        {
-//            MainState = Driving_Setup_State;
-//        }
-//        else
-//        {
-//            MainState = OONAPU_Setup_State;
-//        }
-#endif
+        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
+        MainState = Driving_Setup_State;
     }
 }
 
@@ -874,11 +903,12 @@ static void MirrorDigitalInputOnBluetoothOutput(void)
 {
 	for (HeadArraySensor_t i = 0; i < HEAD_ARRAY_SENSOR_EOL; i++)
 	{
-        if (headArrayDigitalInputValue(HEAD_ARRAY_SENSOR_BACK)) // Is 4th back pad active?
-        {
-            if (Is_SW1_ON() == true)   // if SW1 is ON
-                continue;
-        }
+// This is removed to allow 4 pads to control the 4 Bluetooth (pad) control signals.
+//        if (headArrayDigitalInputValue(HEAD_ARRAY_SENSOR_BACK)) // Is 4th back pad active?
+//        {
+//            if (Is_SW1_ON() == true)   // if SW1 is ON
+//                continue;
+//        }
         bluetoothSimpleIfBspPadMirrorStateSet(i, headArrayDigitalInputValue(i));
 	}
 }
