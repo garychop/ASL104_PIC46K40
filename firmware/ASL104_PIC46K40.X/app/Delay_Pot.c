@@ -113,7 +113,7 @@ uint16_t GetDelayTime (void)
     myADC = ReadDelayPot();
     // I think we can simply multiply the ADC value by 6 to determine delay time.
     returnVal = myADC * 6;
-    if (returnVal < 500)   // Check for minimum value and force to 0.
+    if (returnVal < 600)   // Check for minimum value and force to 0.
         returnVal = 0;
     
     if (returnVal > 6000)   // Force a max value.
