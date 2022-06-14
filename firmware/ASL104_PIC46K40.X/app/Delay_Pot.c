@@ -117,7 +117,7 @@ uint16_t GetDelayTime (void)
         returnVal = 0;
     
     if (returnVal > 6000)   // Force a max value.
-        returnVal = 6000;      // 6 seconds in milliseconds.
+        returnVal = 6000;   // 6 seconds in milliseconds.
     
     return (returnVal);
 }

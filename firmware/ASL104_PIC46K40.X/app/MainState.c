@@ -144,7 +144,7 @@ static void MainTask (void);
 static void MirrorDigitalInputOnBluetoothOutput(void);
 
 // The following are the states
-static void Idle_State (void);
+//static void Idle_State (void);
 
 static void StartVersionAnnunciationState (void);
 static void AnnunciateVersionState (void);
@@ -172,8 +172,8 @@ static void OON_Check_State (void);
 static void Driving_State (void);
 //static void Driving_UserSwitchActivated (void);
 static void Driving_UserSwitch_State (void);
-static void UserSwitchSettingMode_State (void);
-static void Driving_Idle_State (void);
+static void NoSwitchesThenDisabled_State (void);
+static void Idle_State (void);
 static void ExitIdleState (void);
 
 static void Driving_ModeSwitch_State (void);
@@ -252,10 +252,10 @@ static void MainTask (void)
 }
 
 //-------------------------------------------------------------------------
-static void Idle_State (void)
-{
-    ++g_StartupDelayCounter;
-}
+//static void Idle_State (void)
+//{
+//    ++g_StartupDelayCounter;
+//}
 
 //-------------------------------------------------------------------------
 // State: AnnunciateVersionState
@@ -319,7 +319,7 @@ static void Startup_State (void)
         else    // Go to a Drive Disable state.
         {
             GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
-            MainState = Driving_Idle_State; // wait for push button.
+            MainState = Idle_State; // wait for push button.
         }
     }
 }
@@ -373,7 +373,7 @@ static void Driving_Setup_State (void)
     // When it does, go to the Driving State.
     if ((g_ExternalSwitchStatus & (USER_SWITCH | MODE_SWITCH)) == false)
     {
-        beeperBeep (ANNOUNCE_POWER_ON);
+        //beeperBeep (ANNOUNCE_POWER_ON);
         MainState = Driving_State;  // Set to Driving state
     }
 }
@@ -434,21 +434,16 @@ static void Driving_State (void)
         speedPercentage = 0;        // Force no drive demand.
         directionPercentage = 0;
 
-        // If the Delay Pot is all the way CCW (0 delay), then
-        // simply drive the Mode Pin Output as long as the 
-        // switch is closed.
+        // Turn off the Power LED
+        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
+        beeperBeep (BEEPER_PATTERN_GOTO_IDLE);
         g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
         if (g_SwitchDelay == 0)
         {
-            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT); // Assert the Mode Control line.
-            MainState = UserSwitchSettingMode_State;
+            MainState = NoSwitchesThenDisabled_State;
         }
         else
         {
-            // Turn off the Power LED
-            //GenOutCtrlApp_SetStateAll(GEN_OUT_POWER_LED_OFF);
-            GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
-            beeperBeep (BEEPER_PATTERN_GOTO_IDLE);
             // Setup delay time.
             MainState = Driving_UserSwitch_State;
         }
@@ -503,6 +498,19 @@ static void Driving_State (void)
 }
 
 //-------------------------------------------------------------------------
+// NoSwitchesThenDisabled_State
+//      Stay here until the switches are released and then goto
+//      standby condition.
+//-------------------------------------------------------------------------
+static void NoSwitchesThenDisabled_State (void)
+{
+    if ((g_ExternalSwitchStatus & USER_SWITCH) == false)
+    {
+        MainState = Idle_State;
+    }
+}
+
+//-------------------------------------------------------------------------
 // Driving_UserSwitch_State
 //      Stay here until
 //      a. The delays expires then switch to Bluetooth active state.
@@ -527,48 +535,41 @@ static void Driving_UserSwitch_State(void)
     else // The Switch is released before the Long Press occurred.
     {
         GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
-        MainState = Driving_Idle_State;
+        MainState = Idle_State;
     }
 }
 
 //-------------------------------------------------------------------------
-// State: UserSwitchSettingMode_State
-//      We are asserting the Mode Output as long as the USER PORT switch
-//      input is active.
-//-------------------------------------------------------------------------
-static void UserSwitchSettingMode_State (void)
-{
-    if (g_ExternalSwitchStatus & USER_SWITCH)
-    {
-        // Nothing to do.
-    }
-    else // The Switch is released
-    {
-        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT); // de-assert the Mode Control line.
-        MainState = OON_Check_State;
-    }
-}
-
-//-------------------------------------------------------------------------
-// State: Driving_Idle_State
+// State: Idle_State
 //      Remain here until the User Switch goes active then we are going
 //      enable driving, but first, we are doing a OON test.
 //-------------------------------------------------------------------------
-static void Driving_Idle_State (void)
+static void Idle_State (void)
 {
     if (g_ExternalSwitchStatus & USER_SWITCH)
     {
-        GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
-        MainState = Driving_Setup_State;
+        GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_POWER_LED);  // Turn off the LED
+        beeperBeep (ANNOUNCE_POWER_ON);
+        g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
+        if (g_SwitchDelay == 0)
+        {
+            // Delay Pot is fully CCW, go startup and do nothing else.
+            MainState = Driving_Setup_State;
+        }
+        else
+        {   // We're going to exit this state and look  for long 
+            // USER PORT switch closure.
+            MainState = ExitIdleState;
+        }
     }
 }
 
 //-------------------------------------------------------------------------
 // State: ExitIdleState
-//  Enter this state from Driving_Idle_State when the User PORT switch
+//  Enter this state from Idle_State when the User PORT switch
 //  has been pressed. Remain here until the USER PORT switch has been
 //  released or the Press Timeout (pot) has expired in which case, enable
-//  bluetooth operatin.
+//  bluetooth operation.
 //-------------------------------------------------------------------------
 static void ExitIdleState (void)
 {
@@ -590,7 +591,6 @@ static void ExitIdleState (void)
     {
         MainState = Driving_Setup_State;
     }
-
 }
 
 //------------------------------------------------------------------------------
@@ -701,6 +701,8 @@ static void Driving_ModeSwitch_State (void)
         {
             GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT);  // Turn off the LED
             g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
+            if (g_SwitchDelay < (1000 / MAIN_TASK_DELAY))   // At least one second.
+                g_SwitchDelay = (1000 / MAIN_TASK_DELAY);
             MainState = DriveMode_ModeSwitchDelay1;
         }
     }
@@ -728,7 +730,7 @@ static void DriveMode_ModeSwitchDelay1 (void)
         {
             beeperBeep (BEEPER_PATTERN_RESUME_DRIVING);
             g_PulseDelay = 100 / MAIN_TASK_DELAY;   // 100 milliseconds
-            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT);  // Turn off the LED
+            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT);
             MainState = DriveMode_ModeSwitchDelay2;
         }
     }
@@ -751,7 +753,7 @@ static void DriveMode_ModeSwitchDelay2 (void)
         --g_PulseDelay;
         if (g_PulseDelay == 0)
         {
-            GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT);  // Turn off the LED
+            GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT);
             g_PulseDelay = 200 / MAIN_TASK_DELAY;   // 200 millisecond delay
             MainState = DriveMode_ModeSwitchDelay3;
         }
@@ -775,7 +777,7 @@ static void DriveMode_ModeSwitchDelay3 (void)
         if (g_PulseDelay == 0)
         {
             beeperBeep (BEEPER_PATTERN_RESUME_DRIVING);
-            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT);  // Turn off the LED
+            GenOutCtrlBsp_SetActive (GEN_OUT_CTRL_ID_RESET_OUT);
             g_PulseDelay = 100 / MAIN_TASK_DELAY;   // 200 millisecond delay
             MainState = DriveMode_ModeSwitchDelay4;
         }
@@ -800,6 +802,8 @@ static void DriveMode_ModeSwitchDelay4 (void)
         {
             GenOutCtrlBsp_SetInactive (GEN_OUT_CTRL_ID_RESET_OUT);  // Turn off the LED
             g_SwitchDelay = GetDelayTime() / MAIN_TASK_DELAY;
+            if (g_SwitchDelay < (1000 / MAIN_TASK_DELAY))
+                g_SwitchDelay = (1000 / MAIN_TASK_DELAY);
             MainState = DriveMode_ModeSwitchDelay5;
         }
     }
@@ -919,6 +923,6 @@ static void MirrorDigitalInputOnBluetoothOutput(void)
 //------------------------------------------------------------------------------
 bool Does_Main_Allow_Beeping (void)
 {
-    return (MainState != Driving_Idle_State);   // This is the only time to quiet the beeping
+    return (MainState != Idle_State);   // This is the only time to quiet the beeping
 }
 
